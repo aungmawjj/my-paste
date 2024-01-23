@@ -13,14 +13,26 @@ import (
 func Start() {
 	gClientId := "605091559450-3jl3h3ev302tgbd5c1eaqi1hel28squt.apps.googleusercontent.com"
 	signingKey := "secret"
-	authMw := NewAuthMiddleware(signingKey)
+	webappBundleDir := "webapp/dist"
 	e := echo.New()
 	e.Renderer = NewRenderer()
 	e.Use(echomw.Logger())
+	e.Use(echomw.Gzip())
+	e.Use(NewWebappServerMiddleware(webappBundleDir))
+	_ = NewAuthMiddleware(signingKey)
+
 	e.GET("/login", MakeLoginPageHandler(gClientId, "/login-callback"))
 	e.POST("/login-callback", MakeLoginCallbackHandler(signingKey, NewIdTokenValidator(gClientId)))
-	e.GET("/", RootHandler, authMw)
 	e.Logger.Fatal(e.Start("localhost:8080"))
+}
+
+func NewWebappServerMiddleware(bundleDir string) echo.MiddlewareFunc {
+	return echomw.StaticWithConfig(echomw.StaticConfig{
+		Root:   bundleDir,
+		Index:  "index.html",
+		Browse: false,
+		HTML5:  true,
+	})
 }
 
 func RootHandler(c echo.Context) error {
