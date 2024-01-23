@@ -1,6 +1,7 @@
-package main
+package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -11,11 +12,6 @@ import (
 	"google.golang.org/api/idtoken"
 )
 
-type loginTemplateData struct {
-	GoogleClientId   string
-	LoginCallbackUri string
-}
-
 type TokenClaims struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
@@ -23,6 +19,23 @@ type TokenClaims struct {
 }
 
 var tokenCookieName string = "my_paste_token"
+var csrfCookieName string = "g_csrf_token"
+
+type IdTokenValidator interface {
+	Validate(ctx context.Context, idToken string) (*idtoken.Payload, error)
+}
+
+func NewIdTokenValidator(gClientId string) IdTokenValidator {
+	return &idTokenValidator{gClientId}
+}
+
+type idTokenValidator struct {
+	gClientId string
+}
+
+func (v *idTokenValidator) Validate(ctx context.Context, idToken string) (*idtoken.Payload, error) {
+	return idtoken.Validate(ctx, idToken, v.gClientId)
+}
 
 func NewAuthMiddleware(signingKey string) echo.MiddlewareFunc {
 	config := echojwt.Config{
@@ -41,66 +54,71 @@ func GetTokenClaims(c echo.Context) *TokenClaims {
 }
 
 func MakeLoginPageHandler(gClientId, callbackUri string) echo.HandlerFunc {
+	loginTemplateData := struct {
+		GoogleClientId   string
+		LoginCallbackUri string
+	}{gClientId, callbackUri}
 	return func(c echo.Context) error {
-		return c.Render(http.StatusOK, "login", loginTemplateData{gClientId, callbackUri})
+		return c.Render(http.StatusOK, "login", loginTemplateData)
 	}
 }
 
-func MakeLoginCallbackHandler(gClientId, signingKey string) echo.HandlerFunc {
+func MakeLoginCallbackHandler(signingKey string, validator IdTokenValidator) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		payload, err := validateGoogleSignIn(c, gClientId)
+		payload, err := validateGoogleSignIn(c, validator)
 		if err != nil {
-			return redirectToLoginError(c, err)
+			return handleLoginError(c, err)
 		}
-		cookie, err := newTokenCookie(payload, signingKey)
+		token := generateToken(payload)
+		signedToken, err := token.SignedString([]byte(signingKey))
 		if err != nil {
-			return redirectToLoginError(c, err)
+			return handleLoginError(c, err)
 		}
-		c.SetCookie(cookie)
+		c.SetCookie(mypasteTokenCookie(signedToken))
 		return c.Redirect(http.StatusFound, "/")
 	}
 }
 
-type LoginCallbackRequestBody struct {
+func handleLoginError(c echo.Context, err error) error {
+	c.Logger().Errorf("login failed: %v", err)
+	return c.Redirect(http.StatusTemporaryRedirect, "/login-error")
+}
+
+type loginCallbackBody struct {
 	Credential string `form:"credential"`
 	CsrfToken  string `form:"g_csrf_token"`
 }
 
-func validateGoogleSignIn(c echo.Context, gClientId string) (*idtoken.Payload, error) {
-	body := new(LoginCallbackRequestBody)
+func validateGoogleSignIn(c echo.Context, validator IdTokenValidator) (*idtoken.Payload, error) {
+	body := new(loginCallbackBody)
 	if err := c.Bind(body); err != nil {
 		return nil, err
 	}
-	csrfTokenCookie, err := c.Cookie("g_csrf_token")
+	csrfTokenCookie, err := c.Cookie(csrfCookieName)
 	if err != nil {
 		return nil, err
 	}
 	if body.CsrfToken != csrfTokenCookie.Value {
 		return nil, fmt.Errorf("invalid csrf token, body: %v, cookie: %v", body.CsrfToken, csrfTokenCookie.Value)
 	}
-	return idtoken.Validate(c.Request().Context(), body.Credential, gClientId)
+	return validator.Validate(c.Request().Context(), body.Credential)
 }
 
-func newTokenCookie(payload *idtoken.Payload, signingKey string) (*http.Cookie, error) {
+func generateToken(payload *idtoken.Payload) *jwt.Token {
 	claims := &TokenClaims{
 		payload.Claims["name"].(string),
 		payload.Claims["email"].(string),
 		jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(72 * time.Hour))},
 	}
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(signingKey))
-	if err != nil {
-		return nil, fmt.Errorf("Failed to sign token, %w", err)
-	}
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+}
+
+func mypasteTokenCookie(token string) *http.Cookie {
 	return &http.Cookie{
 		Name:     tokenCookieName,
 		Value:    token,
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-	}, nil
-}
-
-func redirectToLoginError(c echo.Context, err error) error {
-	c.Logger().Errorf("Login error: %v", err)
-	return c.Redirect(http.StatusTemporaryRedirect, "/login-error")
+		SameSite: http.SameSiteLaxMode,
+	}
 }

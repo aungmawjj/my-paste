@@ -1,0 +1,10 @@
+with-expecter: true
+dir: "mocks"
+outpkg: "mpmocks"
+mockname: "Mock{{.InterfaceName}}"
+filename: "mock_{{.InterfaceName}}_gen.go"
+packages:
+  mypaste/service:
+    interfaces:
+      IdTokenValidator:
+      EchoContext:
