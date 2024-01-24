@@ -4,7 +4,9 @@ outpkg: "mpmocks"
 mockname: "Mock{{.InterfaceName}}"
 filename: "mock_{{.InterfaceName}}_gen.go"
 packages:
-  mypaste/service:
+  github.com/aungmawjj/my-paste/mypaste:
     interfaces:
-      IdTokenValidator:
       EchoContext:
+      EchoLogger:
+      IdTokenValidator:
+      GoogleSignInValidator:

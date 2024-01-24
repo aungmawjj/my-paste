@@ -1,4 +1,4 @@
-package service
+package mypaste
 
 import (
 	"context"
@@ -18,8 +18,10 @@ type TokenClaims struct {
 	jwt.RegisteredClaims
 }
 
-var tokenCookieName string = "my_paste_token"
-var csrfCookieName string = "g_csrf_token"
+const (
+	tokenCookieName = "my_paste_token"
+	csrfCookieName  = "g_csrf_token"
+)
 
 type IdTokenValidator interface {
 	Validate(ctx context.Context, idToken string) (*idtoken.Payload, error)
@@ -35,6 +37,38 @@ type idTokenValidator struct {
 
 func (v *idTokenValidator) Validate(ctx context.Context, idToken string) (*idtoken.Payload, error) {
 	return idtoken.Validate(ctx, idToken, v.gClientId)
+}
+
+type GoogleSignInValidator interface {
+	Validate(c echo.Context) (*idtoken.Payload, error)
+}
+
+func NewGoogleSignInValidator(v IdTokenValidator) GoogleSignInValidator {
+	return &gSignInValidator{v}
+}
+
+type gSignInValidator struct {
+	validator IdTokenValidator
+}
+
+type loginCallbackBody struct {
+	Credential string `form:"credential"`
+	CsrfToken  string `form:"g_csrf_token"`
+}
+
+func (v *gSignInValidator) Validate(c echo.Context) (*idtoken.Payload, error) {
+	body := new(loginCallbackBody)
+	if err := c.Bind(body); err != nil {
+		return nil, err
+	}
+	csrfTokenCookie, err := c.Cookie(csrfCookieName)
+	if err != nil {
+		return nil, err
+	}
+	if body.CsrfToken != csrfTokenCookie.Value {
+		return nil, fmt.Errorf("invalid csrf token, body: %v, cookie: %v", body.CsrfToken, csrfTokenCookie.Value)
+	}
+	return v.validator.Validate(c.Request().Context(), body.Credential)
 }
 
 func NewAuthMiddleware(signingKey string) echo.MiddlewareFunc {
@@ -63,16 +97,16 @@ func MakeLoginPageHandler(gClientId, callbackUri string) echo.HandlerFunc {
 	}
 }
 
-func MakeLoginCallbackHandler(signingKey string, validator IdTokenValidator) echo.HandlerFunc {
+func MakeLoginCallbackHandler(validator GoogleSignInValidator, signingKey string) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		payload, err := validateGoogleSignIn(c, validator)
+		payload, err := validator.Validate(c)
 		if err != nil {
 			return handleLoginError(c, err)
 		}
 		token := generateToken(payload)
 		signedToken, err := token.SignedString([]byte(signingKey))
 		if err != nil {
-			return handleLoginError(c, err)
+			return handleLoginError(c, fmt.Errorf("failed to sign token. %w", err))
 		}
 		c.SetCookie(mypasteTokenCookie(signedToken))
 		return c.Redirect(http.StatusFound, "/")
@@ -82,26 +116,6 @@ func MakeLoginCallbackHandler(signingKey string, validator IdTokenValidator) ech
 func handleLoginError(c echo.Context, err error) error {
 	c.Logger().Errorf("login failed: %v", err)
 	return c.Redirect(http.StatusTemporaryRedirect, "/login-error")
-}
-
-type loginCallbackBody struct {
-	Credential string `form:"credential"`
-	CsrfToken  string `form:"g_csrf_token"`
-}
-
-func validateGoogleSignIn(c echo.Context, validator IdTokenValidator) (*idtoken.Payload, error) {
-	body := new(loginCallbackBody)
-	if err := c.Bind(body); err != nil {
-		return nil, err
-	}
-	csrfTokenCookie, err := c.Cookie(csrfCookieName)
-	if err != nil {
-		return nil, err
-	}
-	if body.CsrfToken != csrfTokenCookie.Value {
-		return nil, fmt.Errorf("invalid csrf token, body: %v, cookie: %v", body.CsrfToken, csrfTokenCookie.Value)
-	}
-	return validator.Validate(c.Request().Context(), body.Credential)
 }
 
 func generateToken(payload *idtoken.Payload) *jwt.Token {

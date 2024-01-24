@@ -1,7 +1,7 @@
 package main
 
-import "mypaste/service"
+import "github.com/aungmawjj/my-paste/mypaste"
 
 func main() {
-	service.Start()
+	mypaste.StartService()
 }
