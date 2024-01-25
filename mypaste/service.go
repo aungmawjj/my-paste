@@ -20,8 +20,8 @@ func StartService() {
 	e.Use(echomw.Logger())
 	e.Use(echomw.Gzip())
 	e.Use(NewWebappServerMiddleware(webappBundleDir))
-	authmw := NewAuthMiddleware(signingKey)
 
+	authmw := NewAuthMiddleware(signingKey)
 	validator := NewGoogleSignInValidator(NewIdTokenValidator(gClientId))
 
 	e.GET("/login", MakeLoginPageHandler(gClientId, "http://localhost:8080/login-callback"))
@@ -29,6 +29,8 @@ func StartService() {
 
 	e.POST("/api/auth/authenticate", MakeAuthenticateHandler(signingKey), authmw)
 	e.POST("/api/auth/logout", MakeLogoutHandler(), authmw)
+
+	e.Any("/api/*", ApiNotFoundHandler, authmw)
 
 	e.Logger.Fatal(e.Start("localhost:8080"))
 }
@@ -40,6 +42,10 @@ func NewWebappServerMiddleware(bundleDir string) echo.MiddlewareFunc {
 		Browse: false,
 		HTML5:  true,
 	})
+}
+
+func ApiNotFoundHandler(c echo.Context) error {
+	return c.NoContent(http.StatusNotFound)
 }
 
 func RootHandler(c echo.Context) error {
