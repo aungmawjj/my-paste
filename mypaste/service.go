@@ -20,11 +20,16 @@ func StartService() {
 	e.Use(echomw.Logger())
 	e.Use(echomw.Gzip())
 	e.Use(NewWebappServerMiddleware(webappBundleDir))
-	_ = NewAuthMiddleware(signingKey)
+	authmw := NewAuthMiddleware(signingKey)
 
 	validator := NewGoogleSignInValidator(NewIdTokenValidator(gClientId))
-	e.GET("/login", MakeLoginPageHandler(gClientId, "/login-callback"))
+
+	e.GET("/login", MakeLoginPageHandler(gClientId, "http://localhost:8080/login-callback"))
 	e.POST("/login-callback", MakeLoginCallbackHandler(validator, signingKey))
+
+	e.POST("/api/auth/authenticate", MakeAuthenticateHandler(signingKey), authmw)
+	e.POST("/api/auth/logout", MakeLogoutHandler(), authmw)
+
 	e.Logger.Fatal(e.Start("localhost:8080"))
 }
 

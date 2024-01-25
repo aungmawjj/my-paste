@@ -12,9 +12,13 @@ import (
 	"google.golang.org/api/idtoken"
 )
 
+type User struct {
+	Name  string
+	Email string
+}
+
 type TokenClaims struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	User
 	jwt.RegisteredClaims
 }
 
@@ -40,7 +44,7 @@ func (v *idTokenValidator) Validate(ctx context.Context, idToken string) (*idtok
 }
 
 type GoogleSignInValidator interface {
-	Validate(c echo.Context) (*idtoken.Payload, error)
+	Validate(c echo.Context) (*User, error)
 }
 
 func NewGoogleSignInValidator(v IdTokenValidator) GoogleSignInValidator {
@@ -56,7 +60,7 @@ type loginCallbackBody struct {
 	CsrfToken  string `form:"g_csrf_token"`
 }
 
-func (v *gSignInValidator) Validate(c echo.Context) (*idtoken.Payload, error) {
+func (v *gSignInValidator) Validate(c echo.Context) (*User, error) {
 	body := new(loginCallbackBody)
 	if err := c.Bind(body); err != nil {
 		return nil, err
@@ -68,7 +72,11 @@ func (v *gSignInValidator) Validate(c echo.Context) (*idtoken.Payload, error) {
 	if body.CsrfToken != csrfTokenCookie.Value {
 		return nil, fmt.Errorf("invalid csrf token, body: %v, cookie: %v", body.CsrfToken, csrfTokenCookie.Value)
 	}
-	return v.validator.Validate(c.Request().Context(), body.Credential)
+	payload, err := v.validator.Validate(c.Request().Context(), body.Credential)
+	if err != nil {
+		return nil, err
+	}
+	return &User{payload.Claims["name"].(string), payload.Claims["email"].(string)}, nil
 }
 
 func NewAuthMiddleware(signingKey string) echo.MiddlewareFunc {
@@ -99,16 +107,16 @@ func MakeLoginPageHandler(gClientId, callbackUri string) echo.HandlerFunc {
 
 func MakeLoginCallbackHandler(validator GoogleSignInValidator, signingKey string) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		payload, err := validator.Validate(c)
+		user, err := validator.Validate(c)
 		if err != nil {
 			return handleLoginError(c, err)
 		}
-		token := generateToken(payload)
+		token := generateToken(*user)
 		signedToken, err := token.SignedString([]byte(signingKey))
 		if err != nil {
 			return handleLoginError(c, fmt.Errorf("failed to sign token. %w", err))
 		}
-		c.SetCookie(mypasteTokenCookie(signedToken))
+		c.SetCookie(newTokenCookie(signedToken))
 		return c.Redirect(http.StatusFound, "/")
 	}
 }
@@ -118,21 +126,49 @@ func handleLoginError(c echo.Context, err error) error {
 	return c.Redirect(http.StatusTemporaryRedirect, "/login-error")
 }
 
-func generateToken(payload *idtoken.Payload) *jwt.Token {
+func generateToken(user User) *jwt.Token {
 	claims := &TokenClaims{
-		payload.Claims["name"].(string),
-		payload.Claims["email"].(string),
+		user,
 		jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(72 * time.Hour))},
 	}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 }
 
-func mypasteTokenCookie(token string) *http.Cookie {
+func newTokenCookie(token string) *http.Cookie {
 	return &http.Cookie{
 		Name:     tokenCookieName,
 		Value:    token,
+		Path:     "/",
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
+	}
+}
+
+func expiredTokenCookie() *http.Cookie {
+	return &http.Cookie{
+		Name:    tokenCookieName,
+		Path:    "/",
+		Expires: time.Now().Add(-time.Hour),
+	}
+}
+
+func MakeAuthenticateHandler(signingKey string) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		claims := GetTokenClaims(c)
+		token := generateToken(claims.User)
+		signedToken, err := token.SignedString([]byte(signingKey))
+		if err != nil {
+			return fmt.Errorf("failed to sign token. %w", err)
+		}
+		c.SetCookie(newTokenCookie(signedToken))
+		return c.JSON(http.StatusOK, claims.User)
+	}
+}
+
+func MakeLogoutHandler() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		c.SetCookie(expiredTokenCookie())
+		return c.NoContent(http.StatusOK)
 	}
 }

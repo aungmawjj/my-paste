@@ -1,12 +1,14 @@
-with-expecter: true
-dir: "mocks"
-outpkg: "mpmocks"
+with-expecter: True
+inpackage: True
+dir: "{{.InterfaceDir}}"
 mockname: "Mock{{.InterfaceName}}"
-filename: "mock_{{.InterfaceName}}_gen.go"
+outpkg: "{{.PackageName}}"
+filename: "mock_{{.InterfaceName}}_gen_test.go"
+
 packages:
   github.com/aungmawjj/my-paste/mypaste:
     interfaces:
-      EchoContext:
-      EchoLogger:
       IdTokenValidator:
       GoogleSignInValidator:
+      EchoContext:
+      EchoLogger:
