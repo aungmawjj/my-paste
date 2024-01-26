@@ -79,13 +79,13 @@ func (v *gSignInValidator) Validate(c echo.Context) (*User, error) {
 	return &User{payload.Claims["name"].(string), payload.Claims["email"].(string)}, nil
 }
 
-func NewAuthMiddleware(signingKey string) echo.MiddlewareFunc {
+func NewAuthMiddleware(jwtSignKey string) echo.MiddlewareFunc {
 	config := echojwt.Config{
 		TokenLookup: "cookie:" + tokenCookieName,
 		NewClaimsFunc: func(c echo.Context) jwt.Claims {
 			return new(TokenClaims)
 		},
-		SigningKey: []byte(signingKey),
+		SigningKey: []byte(jwtSignKey),
 	}
 	return echojwt.WithConfig(config)
 }
@@ -105,14 +105,14 @@ func MakeLoginPageHandler(gClientId, callbackUri string) echo.HandlerFunc {
 	}
 }
 
-func MakeLoginCallbackHandler(validator GoogleSignInValidator, signingKey string) echo.HandlerFunc {
+func MakeLoginCallbackHandler(validator GoogleSignInValidator, jwtSignKey string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		user, err := validator.Validate(c)
 		if err != nil {
 			return handleLoginError(c, err)
 		}
 		token := generateToken(*user)
-		signedToken, err := token.SignedString([]byte(signingKey))
+		signedToken, err := token.SignedString([]byte(jwtSignKey))
 		if err != nil {
 			return handleLoginError(c, fmt.Errorf("failed to sign token. %w", err))
 		}
@@ -153,11 +153,11 @@ func expiredTokenCookie() *http.Cookie {
 	}
 }
 
-func MakeAuthenticateHandler(signingKey string) echo.HandlerFunc {
+func MakeAuthenticateHandler(jwtSignKey string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		claims := GetTokenClaims(c)
 		token := generateToken(claims.User)
-		signedToken, err := token.SignedString([]byte(signingKey))
+		signedToken, err := token.SignedString([]byte(jwtSignKey))
 		if err != nil {
 			return fmt.Errorf("failed to sign token. %w", err)
 		}

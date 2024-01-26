@@ -11,6 +11,8 @@ import (
 	"google.golang.org/api/idtoken"
 )
 
+// TODO: test using httptest without mocking echo context to decople the tests with implementation
+
 func TestGoogleSignInValidator(t *testing.T) {
 	csrfToken := "mock_csrftoken"
 	credential := "mock_credential"

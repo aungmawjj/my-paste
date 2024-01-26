@@ -2,18 +2,34 @@ package mypaste
 
 import (
 	"embed"
+	"encoding/hex"
+	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
+	"net/url"
+	"os"
 
 	"github.com/labstack/echo/v4"
 	echomw "github.com/labstack/echo/v4/middleware"
+	"golang.org/x/crypto/sha3"
 )
 
 func StartService() {
-	gClientId := "605091559450-3jl3h3ev302tgbd5c1eaqi1hel28squt.apps.googleusercontent.com"
-	signingKey := "secret"
-	webappBundleDir := "webapp/dist"
+	gClientId := os.Getenv("GOOGLE_CLIENT_ID")
+	jwtSignKey := os.Getenv("JWT_SIGN_KEY")
+	webappBundleDir := os.Getenv("WEBAPP_BUNDLE_DIR")
+	loginCallbackUri := os.Getenv("LOGIN_CALLBACK_URI")
+	loginCallbackEndpoint := parseLoginCallbackEndpoint(loginCallbackUri)
+	serveAddr := os.Getenv("SERVE_ADDR")
+
+	log.Println("gClientId:                   ", gClientId)
+	log.Println("jwtSignKey (hash):           ", hash(jwtSignKey)[:10])
+	log.Println("webappBundleDir:             ", webappBundleDir)
+	log.Println("loginCallbackUri:            ", loginCallbackUri)
+	log.Println("loginCallbackEndpoint:       ", loginCallbackEndpoint)
+	log.Println("serveAddr:                   ", serveAddr)
 
 	e := echo.New()
 	e.Renderer = NewRenderer()
@@ -21,18 +37,31 @@ func StartService() {
 	e.Use(echomw.Gzip())
 	e.Use(NewWebappServerMiddleware(webappBundleDir))
 
-	authmw := NewAuthMiddleware(signingKey)
+	authmw := NewAuthMiddleware(jwtSignKey)
 	validator := NewGoogleSignInValidator(NewIdTokenValidator(gClientId))
 
-	e.GET("/login", MakeLoginPageHandler(gClientId, "http://localhost:8080/login-callback"))
-	e.POST("/login-callback", MakeLoginCallbackHandler(validator, signingKey))
+	e.GET("/login", MakeLoginPageHandler(gClientId, loginCallbackUri))
+	e.POST(loginCallbackEndpoint, MakeLoginCallbackHandler(validator, jwtSignKey))
 
-	e.POST("/api/auth/authenticate", MakeAuthenticateHandler(signingKey), authmw)
+	e.POST("/api/auth/authenticate", MakeAuthenticateHandler(jwtSignKey), authmw)
 	e.POST("/api/auth/logout", MakeLogoutHandler(), authmw)
 
 	e.Any("/api/*", ApiNotFoundHandler, authmw)
 
-	e.Logger.Fatal(e.Start("localhost:8080"))
+	e.HideBanner = true
+	e.Logger.Fatal(e.Start(serveAddr))
+}
+
+func parseLoginCallbackEndpoint(loginCallbackUri string) string {
+	u, err := url.ParseRequestURI(loginCallbackUri)
+	if err != nil {
+		panic(fmt.Errorf("Failed to parse login callback uri, %v,\n%w", loginCallbackUri, err))
+	}
+	return u.Path
+}
+
+func hash(data string) string {
+	return "0x" + hex.EncodeToString(sha3.New256().Sum([]byte(data)))
 }
 
 func NewWebappServerMiddleware(bundleDir string) echo.MiddlewareFunc {

@@ -4,10 +4,12 @@ go 1.20
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/labstack/gommon v0.4.2
 	github.com/stretchr/testify v1.8.4
+	golang.org/x/crypto v0.18.0
 	google.golang.org/api v0.157.0
 )
 
@@ -34,7 +36,6 @@ require (
 	go.opentelemetry.io/otel v1.22.0 // indirect
 	go.opentelemetry.io/otel/metric v1.22.0 // indirect
 	go.opentelemetry.io/otel/trace v1.22.0 // indirect
-	golang.org/x/crypto v0.18.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/oauth2 v0.16.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
