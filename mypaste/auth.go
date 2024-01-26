@@ -69,7 +69,7 @@ func (v *gSignInValidator) Validate(c echo.Context) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	if body.CsrfToken != csrfTokenCookie.Value {
+	if body.CsrfToken == "" || body.CsrfToken != csrfTokenCookie.Value {
 		return nil, fmt.Errorf("invalid csrf token, body: %v, cookie: %v", body.CsrfToken, csrfTokenCookie.Value)
 	}
 	payload, err := v.validator.Validate(c.Request().Context(), body.Credential)

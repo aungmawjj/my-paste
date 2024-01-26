@@ -18,6 +18,7 @@ func TestGoogleSignInValidator(t *testing.T) {
 	payload := &idtoken.Payload{Claims: map[string]interface{}{"name": user.Name, "email": user.Email}}
 	cookie := &http.Cookie{Name: csrfCookieName, Value: csrfToken}
 	diffCookie := &http.Cookie{Name: csrfCookieName, Value: "diff_cookie"}
+	emptyCookie := &http.Cookie{Name: csrfCookieName, Value: ""}
 
 	cRequestOk := func(c *MockEchoContext) {
 		c.EXPECT().Request().Return(new(http.Request)).Maybe()
@@ -29,6 +30,16 @@ func TestGoogleSignInValidator(t *testing.T) {
 			body.CsrfToken = csrfToken
 		}).Maybe()
 	}
+	cBindEmptyCsrf := func(c *MockEchoContext) {
+		c.EXPECT().Bind(mock.Anything).Return(nil).Run(func(i interface{}) {
+			body := i.(*loginCallbackBody)
+			body.Credential = credential
+			body.CsrfToken = ""
+		}).Maybe()
+	}
+	cBindError := func(c *MockEchoContext) {
+		c.EXPECT().Bind(mock.Anything).Return(errors.New("bind error")).Maybe()
+	}
 	cCookieOk := func(c *MockEchoContext) {
 		c.EXPECT().Cookie(csrfCookieName).Return(cookie, nil).Maybe()
 	}
@@ -37,6 +48,9 @@ func TestGoogleSignInValidator(t *testing.T) {
 	}
 	cCookieDiff := func(c *MockEchoContext) {
 		c.EXPECT().Cookie(csrfCookieName).Return(diffCookie, nil).Maybe()
+	}
+	cCookieEmpty := func(c *MockEchoContext) {
+		c.EXPECT().Cookie(csrfCookieName).Return(emptyCookie, nil).Maybe()
 	}
 	vValidateOk := func(v *MockIdTokenValidator) {
 		v.EXPECT().Validate(mock.Anything, credential).Return(payload, nil).Maybe()
@@ -60,6 +74,16 @@ func TestGoogleSignInValidator(t *testing.T) {
 	cBindOk(cDiffCookie)
 	cCookieDiff(cDiffCookie)
 
+	cEmptyCsrf := NewMockEchoContext(t)
+	cRequestOk(cEmptyCsrf)
+	cBindEmptyCsrf(cEmptyCsrf)
+	cCookieEmpty(cEmptyCsrf)
+
+	cErrorBind := NewMockEchoContext(t)
+	cRequestOk(cErrorBind)
+	cBindError(cErrorBind)
+	cCookieOk(cErrorBind)
+
 	vOk := NewMockIdTokenValidator(t)
 	vValidateOk(vOk)
 
@@ -78,7 +102,9 @@ func TestGoogleSignInValidator(t *testing.T) {
 	}{
 		{"Ok", args{vOk, cOk}, user, false},
 		{"NoCookie", args{vOk, cNoCookie}, nil, true},
-		{"DifferentCookie", args{vOk, cDiffCookie}, nil, true},
+		{"DifferentCsrf", args{vOk, cDiffCookie}, nil, true},
+		{"EmptyCsrf", args{vOk, cEmptyCsrf}, nil, true},
+		{"ErrorBind", args{vOk, cErrorBind}, nil, true},
 		{"InvalidIdToken", args{vError, cOk}, nil, true},
 	}
 	for _, tt := range tests {
