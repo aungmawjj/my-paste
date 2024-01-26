@@ -105,9 +105,9 @@ func MakeLoginPageHandler(gClientId, callbackUri string) echo.HandlerFunc {
 	}
 }
 
-func MakeLoginCallbackHandler(validator GoogleSignInValidator, jwtSignKey string) echo.HandlerFunc {
+func MakeLoginCallbackHandler(validator IdTokenValidator, jwtSignKey string) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		user, err := validator.Validate(c)
+		user, err := validateGoogleSignin(c, validator)
 		if err != nil {
 			return handleLoginError(c, err)
 		}
@@ -119,6 +119,25 @@ func MakeLoginCallbackHandler(validator GoogleSignInValidator, jwtSignKey string
 		c.SetCookie(newTokenCookie(signedToken))
 		return c.Redirect(http.StatusFound, "/")
 	}
+}
+
+func validateGoogleSignin(c echo.Context, v IdTokenValidator) (*User, error) {
+	body := new(loginCallbackBody)
+	if err := c.Bind(body); err != nil {
+		return nil, err
+	}
+	csrfTokenCookie, err := c.Cookie(csrfCookieName)
+	if err != nil {
+		return nil, err
+	}
+	if body.CsrfToken == "" || body.CsrfToken != csrfTokenCookie.Value {
+		return nil, fmt.Errorf("invalid csrf token, body: %v, cookie: %v", body.CsrfToken, csrfTokenCookie.Value)
+	}
+	payload, err := v.Validate(c.Request().Context(), body.Credential)
+	if err != nil {
+		return nil, err
+	}
+	return &User{payload.Claims["name"].(string), payload.Claims["email"].(string)}, nil
 }
 
 func handleLoginError(c echo.Context, err error) error {

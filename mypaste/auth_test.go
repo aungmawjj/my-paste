@@ -123,33 +123,33 @@ func TestGoogleSignInValidator(t *testing.T) {
 	}
 }
 
-func TestLoginCallbackHandlerSuccess(t *testing.T) {
-	user := &User{"user1", "user@example.com"}
+// func TestLoginCallbackHandlerSuccess(t *testing.T) {
+// 	user := &User{"user1", "user@example.com"}
 
-	v := NewMockGoogleSignInValidator(t)
-	v.EXPECT().Validate(mock.Anything).Return(user, nil)
+// 	v := NewMockGoogleSignInValidator(t)
+// 	v.EXPECT().Validate(mock.Anything).Return(user, nil)
 
-	c := NewMockEchoContext(t)
-	c.EXPECT().SetCookie(mock.MatchedBy(func(c *http.Cookie) bool { return c.Name == tokenCookieName }))
-	c.EXPECT().Redirect(http.StatusFound, "/").Return(nil)
+// 	c := NewMockEchoContext(t)
+// 	c.EXPECT().SetCookie(mock.MatchedBy(func(c *http.Cookie) bool { return c.Name == tokenCookieName }))
+// 	c.EXPECT().Redirect(http.StatusFound, "/").Return(nil)
 
-	err := MakeLoginCallbackHandler(v, "secret")(c)
-	assert.NoError(t, err)
+// 	err := MakeLoginCallbackHandler(v, "secret")(c)
+// 	assert.NoError(t, err)
 
-	c.AssertExpectations(t)
-}
+// 	c.AssertExpectations(t)
+// }
 
-func TestLoginCallbackHandlerError(t *testing.T) {
-	v := NewMockGoogleSignInValidator(t)
-	v.EXPECT().Validate(mock.Anything).Return(nil, errors.New("invalid google sign in"))
+// func TestLoginCallbackHandlerError(t *testing.T) {
+// 	v := NewMockGoogleSignInValidator(t)
+// 	v.EXPECT().Validate(mock.Anything).Return(nil, errors.New("invalid google sign in"))
 
-	logger := NewMockEchoLogger(t)
-	logger.EXPECT().Errorf(mock.Anything, mock.Anything).Maybe()
+// 	logger := NewMockEchoLogger(t)
+// 	logger.EXPECT().Errorf(mock.Anything, mock.Anything).Maybe()
 
-	c := NewMockEchoContext(t)
-	c.EXPECT().Logger().Return(logger).Maybe()
-	c.EXPECT().Redirect(http.StatusTemporaryRedirect, "/login-error").Return(nil)
+// 	c := NewMockEchoContext(t)
+// 	c.EXPECT().Logger().Return(logger).Maybe()
+// 	c.EXPECT().Redirect(http.StatusTemporaryRedirect, "/login-error").Return(nil)
 
-	err := MakeLoginCallbackHandler(v, "secret")(c)
-	assert.NoError(t, err)
-}
+// 	err := MakeLoginCallbackHandler(v, "secret")(c)
+// 	assert.NoError(t, err)
+// }

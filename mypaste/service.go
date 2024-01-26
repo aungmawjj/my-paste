@@ -38,10 +38,9 @@ func StartService() {
 	e.Use(NewWebappServerMiddleware(webappBundleDir))
 
 	authmw := NewAuthMiddleware(jwtSignKey)
-	validator := NewGoogleSignInValidator(NewIdTokenValidator(gClientId))
 
 	e.GET("/login", MakeLoginPageHandler(gClientId, loginCallbackUri))
-	e.POST(loginCallbackEndpoint, MakeLoginCallbackHandler(validator, jwtSignKey))
+	e.POST(loginCallbackEndpoint, MakeLoginCallbackHandler(NewIdTokenValidator(gClientId), jwtSignKey))
 
 	e.POST("/api/auth/authenticate", MakeAuthenticateHandler(jwtSignKey), authmw)
 	e.POST("/api/auth/logout", MakeLogoutHandler(), authmw)
