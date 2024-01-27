@@ -9,6 +9,3 @@ packages:
   github.com/aungmawjj/my-paste/mypaste:
     interfaces:
       IdTokenValidator:
-      GoogleSignInValidator:
-      EchoContext:
-      EchoLogger:

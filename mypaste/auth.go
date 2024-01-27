@@ -43,42 +43,6 @@ func (v *idTokenValidator) Validate(ctx context.Context, idToken string) (*idtok
 	return idtoken.Validate(ctx, idToken, v.gClientId)
 }
 
-type GoogleSignInValidator interface {
-	Validate(c echo.Context) (*User, error)
-}
-
-func NewGoogleSignInValidator(v IdTokenValidator) GoogleSignInValidator {
-	return &gSignInValidator{v}
-}
-
-type gSignInValidator struct {
-	validator IdTokenValidator
-}
-
-type loginCallbackBody struct {
-	Credential string `form:"credential"`
-	CsrfToken  string `form:"g_csrf_token"`
-}
-
-func (v *gSignInValidator) Validate(c echo.Context) (*User, error) {
-	body := new(loginCallbackBody)
-	if err := c.Bind(body); err != nil {
-		return nil, err
-	}
-	csrfTokenCookie, err := c.Cookie(csrfCookieName)
-	if err != nil {
-		return nil, err
-	}
-	if body.CsrfToken == "" || body.CsrfToken != csrfTokenCookie.Value {
-		return nil, fmt.Errorf("invalid csrf token, body: %v, cookie: %v", body.CsrfToken, csrfTokenCookie.Value)
-	}
-	payload, err := v.validator.Validate(c.Request().Context(), body.Credential)
-	if err != nil {
-		return nil, err
-	}
-	return &User{payload.Claims["name"].(string), payload.Claims["email"].(string)}, nil
-}
-
 func NewAuthMiddleware(jwtSignKey string) echo.MiddlewareFunc {
 	config := echojwt.Config{
 		TokenLookup: "cookie:" + tokenCookieName,
@@ -116,13 +80,17 @@ func MakeLoginCallbackHandler(validator IdTokenValidator, jwtSignKey string) ech
 		if err != nil {
 			return handleLoginError(c, fmt.Errorf("failed to sign token. %w", err))
 		}
+		c.Logger().Infof("login success, email: %v", user.Email)
 		c.SetCookie(newTokenCookie(signedToken))
-		return c.Redirect(http.StatusFound, "/")
+		return c.Redirect(http.StatusSeeOther, "/")
 	}
 }
 
 func validateGoogleSignin(c echo.Context, v IdTokenValidator) (*User, error) {
-	body := new(loginCallbackBody)
+	body := new(struct {
+		Credential string `form:"credential"`
+		CsrfToken  string `form:"g_csrf_token"`
+	})
 	if err := c.Bind(body); err != nil {
 		return nil, err
 	}
@@ -137,12 +105,26 @@ func validateGoogleSignin(c echo.Context, v IdTokenValidator) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &User{payload.Claims["name"].(string), payload.Claims["email"].(string)}, nil
+	return parseIdTokenPayload(payload)
+}
+
+func parseIdTokenPayload(payload *idtoken.Payload) (*User, error) {
+	nameClaim := payload.Claims["name"]
+	name, ok := nameClaim.(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid idtoken payload name claim: %v", nameClaim)
+	}
+	emailClaiim := payload.Claims["email"]
+	email, ok := emailClaiim.(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid idtoken payload email claim: %v", emailClaiim)
+	}
+	return &User{name, email}, nil
 }
 
 func handleLoginError(c echo.Context, err error) error {
-	c.Logger().Errorf("login failed: %v", err)
-	return c.Redirect(http.StatusTemporaryRedirect, "/login-error")
+	c.Logger().Warnf("login failed: %v", err)
+	return c.Redirect(http.StatusSeeOther, "/login-failed")
 }
 
 func generateToken(user User) *jwt.Token {
