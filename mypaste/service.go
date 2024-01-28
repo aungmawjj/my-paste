@@ -13,6 +13,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	echomw "github.com/labstack/echo/v4/middleware"
+	"golang.org/x/crypto/acme/autocert"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -21,8 +22,12 @@ func StartService() {
 	jwtSignKey := os.Getenv("JWT_SIGN_KEY")
 	webappBundleDir := os.Getenv("WEBAPP_BUNDLE_DIR")
 	loginCallbackUri := os.Getenv("LOGIN_CALLBACK_URI")
-	loginCallbackEndpoint := parseLoginCallbackEndpoint(loginCallbackUri)
 	serveAddr := os.Getenv("SERVE_ADDR")
+	enableAutoTLS := os.Getenv("ENABLE_AUTO_TLS")
+	tlsCacheDir := os.Getenv("TLS_CACHE_DIR")
+	tlsDomain := os.Getenv("TLS_DOMAIN")
+
+	loginCallbackEndpoint := parseLoginCallbackEndpoint(loginCallbackUri)
 
 	log.Println("gClientId:                   ", gClientId)
 	log.Println("jwtSignKey (hash):           ", hash(jwtSignKey)[:10])
@@ -30,12 +35,17 @@ func StartService() {
 	log.Println("loginCallbackUri:            ", loginCallbackUri)
 	log.Println("loginCallbackEndpoint:       ", loginCallbackEndpoint)
 	log.Println("serveAddr:                   ", serveAddr)
+	log.Println("enableAutoTLS:               ", enableAutoTLS)
+	log.Println("tlsCacheDir:                 ", tlsCacheDir)
+	log.Println("tlsDomain:                   ", tlsDomain)
 
 	e := echo.New()
-	e.Renderer = NewRenderer()
+	e.Use(echomw.Recover())
 	e.Use(echomw.Logger())
 	e.Use(echomw.Gzip())
 	e.Use(NewWebappServerMiddleware(webappBundleDir))
+	e.Renderer = NewRenderer()
+	e.HideBanner = true
 
 	authmw := NewAuthMiddleware(jwtSignKey)
 
@@ -47,8 +57,14 @@ func StartService() {
 
 	e.Any("/api/*", ApiNotFoundHandler, authmw)
 
-	e.HideBanner = true
-	e.Logger.Fatal(e.Start(serveAddr))
+	if enableAutoTLS != "1" {
+		e.Logger.Fatal(e.Start(serveAddr))
+		return
+	}
+	e.AutoTLSManager.Cache = autocert.DirCache(tlsCacheDir)
+	e.AutoTLSManager.HostPolicy = autocert.HostWhitelist(tlsDomain)
+	e.Pre(echomw.HTTPSRedirect())
+	e.Logger.Fatal(e.StartAutoTLS(serveAddr))
 }
 
 func parseLoginCallbackEndpoint(loginCallbackUri string) string {
