@@ -70,7 +70,7 @@ func StartService() {
 func parseLoginCallbackEndpoint(loginCallbackUri string) string {
 	u, err := url.ParseRequestURI(loginCallbackUri)
 	if err != nil {
-		panic(fmt.Errorf("Failed to parse login callback uri, %v,\n%w", loginCallbackUri, err))
+		panic(fmt.Errorf("failed to parse login callback uri, %v,\n%w", loginCallbackUri, err))
 	}
 	return u.Path
 }
