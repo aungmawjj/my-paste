@@ -3,125 +3,154 @@ package mypaste
 import (
 	"errors"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/api/idtoken"
 )
 
-func TestGoogleSignInValidator(t *testing.T) {
-	csrfToken := "mock_csrftoken"
-	credential := "mock_credential"
-	user := &User{"user1", "user@example.com"}
-	payload := &idtoken.Payload{Claims: map[string]interface{}{"name": user.Name, "email": user.Email}}
-	cookie := &http.Cookie{Name: csrfCookieName, Value: csrfToken}
-	diffCookie := &http.Cookie{Name: csrfCookieName, Value: "diff_cookie"}
+func TestLoginCallbackHandler(t *testing.T) {
+	const (
+		credentialFormKey = "credential"
+		csrfTokenFormKey  = "g_csrf_token"
+		jwtSignKey        = "secret"
+		headerContentType = "Content-Type"
+	)
 
-	cRequestOk := func(c *MockEchoContext) {
-		c.EXPECT().Request().Return(new(http.Request)).Maybe()
-	}
-	cBindOk := func(c *MockEchoContext) {
-		c.EXPECT().Bind(mock.Anything).Return(nil).Run(func(i interface{}) {
-			body := i.(*loginCallbackBody)
-			body.Credential = credential
-			body.CsrfToken = csrfToken
-		}).Maybe()
-	}
-	cCookieOk := func(c *MockEchoContext) {
-		c.EXPECT().Cookie(csrfCookieName).Return(cookie, nil).Maybe()
-	}
-	cCookieError := func(c *MockEchoContext) {
-		c.EXPECT().Cookie(csrfCookieName).Return(nil, errors.New("cookie not found")).Maybe()
-	}
-	cCookieDiff := func(c *MockEchoContext) {
-		c.EXPECT().Cookie(csrfCookieName).Return(diffCookie, nil).Maybe()
-	}
-	vValidateOk := func(v *MockIdTokenValidator) {
-		v.EXPECT().Validate(mock.Anything, credential).Return(payload, nil).Maybe()
-	}
-	vValidateError := func(v *MockIdTokenValidator) {
-		v.EXPECT().Validate(mock.Anything, credential).Return(nil, errors.New("invalid id token")).Maybe()
+	newRequest := func(form url.Values, cookie *http.Cookie) *http.Request {
+		req := httptest.NewRequest(http.MethodPost, "/login-callback", strings.NewReader(form.Encode()))
+		req.Header.Set(headerContentType, "application/x-www-form-urlencoded")
+		if cookie != nil {
+			req.AddCookie(cookie)
+		}
+		return req
 	}
 
-	cOk := NewMockEchoContext(t)
-	cRequestOk(cOk)
-	cBindOk(cOk)
-	cCookieOk(cOk)
-
-	cNoCookie := NewMockEchoContext(t)
-	cRequestOk(cNoCookie)
-	cBindOk(cNoCookie)
-	cCookieError(cNoCookie)
-
-	cDiffCookie := NewMockEchoContext(t)
-	cRequestOk(cDiffCookie)
-	cBindOk(cDiffCookie)
-	cCookieDiff(cDiffCookie)
-
-	vOk := NewMockIdTokenValidator(t)
-	vValidateOk(vOk)
-
-	vError := NewMockIdTokenValidator(t)
-	vValidateError(vError)
-
-	type args struct {
-		v IdTokenValidator
-		c echo.Context
+	newIdTokenPayload := func(name, email interface{}) *idtoken.Payload {
+		return &idtoken.Payload{Claims: map[string]interface{}{"name": "a", "email": "b"}}
 	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *User
-		wantErr bool
-	}{
-		{"Ok", args{vOk, cOk}, user, false},
-		{"NoCookie", args{vOk, cNoCookie}, nil, true},
-		{"DifferentCookie", args{vOk, cDiffCookie}, nil, true},
-		{"InvalidIdToken", args{vError, cOk}, nil, true},
+
+	newRequestForm := func(credential, csrfToken string) url.Values {
+		return url.Values{credentialFormKey: {credential}, csrfTokenFormKey: {csrfToken}}
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			payload, err := NewGoogleSignInValidator(tt.args.v).Validate(tt.args.c)
-			if tt.wantErr {
-				assert.Error(t, err)
-				assert.Nil(t, payload)
-				return
-			}
-			assert.NoError(t, err)
-			assert.Equal(t, payload, tt.want)
-		})
+
+	assertFailedResponse := func(t *testing.T, rec *httptest.ResponseRecorder) {
+		assert.Equal(t, http.StatusSeeOther, rec.Result().StatusCode)
+		assert.Equal(t, "/login-failed", rec.Result().Header.Get("Location"))
+		idx := slices.IndexFunc(rec.Result().Cookies(), func(c *http.Cookie) bool { return c.Name == tokenCookieName })
+		assert.Equalf(t, -1, idx, "should not return token cookie")
 	}
-}
 
-func TestLoginCallbackHandlerSuccess(t *testing.T) {
-	user := &User{"user1", "user@example.com"}
+	t.Run("ok", func(t *testing.T) {
+		payload := newIdTokenPayload("name", "email")
+		form := newRequestForm("cred", "csrf")
+		csrfCookie := &http.Cookie{Name: csrfCookieName, Value: "csrf"}
 
-	v := NewMockGoogleSignInValidator(t)
-	v.EXPECT().Validate(mock.Anything).Return(user, nil)
+		req := newRequest(form, csrfCookie)
+		rec := httptest.NewRecorder()
+		c := echo.New().NewContext(req, rec)
 
-	c := NewMockEchoContext(t)
-	c.EXPECT().SetCookie(mock.MatchedBy(func(c *http.Cookie) bool { return c.Name == tokenCookieName }))
-	c.EXPECT().Redirect(http.StatusFound, "/").Return(nil)
+		mockV := NewMockIdTokenValidator(t)
+		mockV.EXPECT().Validate(c.Request().Context(), "cred").Return(payload, nil)
 
-	err := MakeLoginCallbackHandler(v, "secret")(c)
-	assert.NoError(t, err)
+		err := MakeLoginCallbackHandler(mockV, jwtSignKey)(c)
 
-	c.AssertExpectations(t)
-}
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusSeeOther, rec.Result().StatusCode)
+		assert.Equal(t, "/", rec.Result().Header.Get("Location"))
 
-func TestLoginCallbackHandlerError(t *testing.T) {
-	v := NewMockGoogleSignInValidator(t)
-	v.EXPECT().Validate(mock.Anything).Return(nil, errors.New("invalid google sign in"))
+		idx := slices.IndexFunc(rec.Result().Cookies(), func(c *http.Cookie) bool { return c.Name == tokenCookieName })
+		require.NotEqual(t, -1, idx, "should return token cookie")
+		tokenCookie := rec.Result().Cookies()[idx]
+		assert.True(t, tokenCookie.HttpOnly)
+		assert.True(t, tokenCookie.Secure)
+		assert.NotEqual(t, http.SameSiteNoneMode, tokenCookie.SameSite)
+	})
 
-	logger := NewMockEchoLogger(t)
-	logger.EXPECT().Errorf(mock.Anything, mock.Anything).Maybe()
+	t.Run("fail if wrong content type", func(t *testing.T) {
+		form := newRequestForm("cred", "csrf")
+		csrfCookie := &http.Cookie{Name: csrfCookieName, Value: "csrf"}
+		req := newRequest(form, csrfCookie)
+		req.Header.Del(headerContentType)
+		rec := httptest.NewRecorder()
+		c := echo.New().NewContext(req, rec)
 
-	c := NewMockEchoContext(t)
-	c.EXPECT().Logger().Return(logger).Maybe()
-	c.EXPECT().Redirect(http.StatusTemporaryRedirect, "/login-error").Return(nil)
+		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
 
-	err := MakeLoginCallbackHandler(v, "secret")(c)
-	assert.NoError(t, err)
+		require.NoError(t, err)
+		assertFailedResponse(t, rec)
+	})
+
+	t.Run("fail if no request body", func(t *testing.T) {
+		csrfCookie := &http.Cookie{Name: csrfCookieName, Value: "csrf"}
+		req := newRequest(nil, csrfCookie)
+		rec := httptest.NewRecorder()
+		c := echo.New().NewContext(req, rec)
+
+		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
+
+		require.NoError(t, err)
+		assertFailedResponse(t, rec)
+	})
+
+	t.Run("fail if no csrf cookie", func(t *testing.T) {
+		form := newRequestForm("credential", "csrf")
+		req := newRequest(form, nil)
+		rec := httptest.NewRecorder()
+		c := echo.New().NewContext(req, rec)
+
+		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
+
+		require.NoError(t, err)
+		assertFailedResponse(t, rec)
+	})
+
+	t.Run("fail if empty csrf token", func(t *testing.T) {
+		form := newRequestForm("cred", "")
+		csrfCookie := &http.Cookie{Name: csrfCookieName, Value: ""}
+		req := newRequest(form, csrfCookie)
+		rec := httptest.NewRecorder()
+		c := echo.New().NewContext(req, rec)
+
+		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
+
+		require.NoError(t, err)
+		assertFailedResponse(t, rec)
+	})
+
+	t.Run("fail if different csrf token", func(t *testing.T) {
+		form := newRequestForm("cred", "csrf")
+		csrfCookie := &http.Cookie{Name: csrfCookieName, Value: "diff_csrf"}
+		req := newRequest(form, csrfCookie)
+		rec := httptest.NewRecorder()
+		c := echo.New().NewContext(req, rec)
+
+		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
+
+		require.NoError(t, err)
+		assertFailedResponse(t, rec)
+	})
+
+	t.Run("fail if invalid idtoken", func(t *testing.T) {
+		form := newRequestForm("cred", "csrf")
+		csrfCookie := &http.Cookie{Name: csrfCookieName, Value: "csrf"}
+		req := newRequest(form, csrfCookie)
+		rec := httptest.NewRecorder()
+		c := echo.New().NewContext(req, rec)
+
+		mockV := NewMockIdTokenValidator(t)
+		mockV.EXPECT().Validate(c.Request().Context(), "cred").Return(nil, errors.New("invalid idtoken"))
+
+		err := MakeLoginCallbackHandler(mockV, jwtSignKey)(c)
+
+		require.NoError(t, err)
+		assertFailedResponse(t, rec)
+	})
+
 }

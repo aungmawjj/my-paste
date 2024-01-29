@@ -36,7 +36,7 @@ go run .
 - [x] Google sign in
 - [x] Test setup
 - [x] Webapp login redirect
-- [ ] Env variables
+- [x] Env variables
 - [ ] CICD to deploy on AWS
 - [ ] Redis stream
 - [ ] Paste API (Add, Read, Delete)
