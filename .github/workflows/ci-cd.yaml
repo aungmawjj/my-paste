@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOMAIN: ${{ vars.DOMAIN }}
+      GOOGLE_CLIENT_ID: "${{ vars.GOOGLE_CLIENT_ID }}"
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -52,7 +53,16 @@ jobs:
             podman pull ${{ env.IMAGE }}
             podman stop mypaste
             podman rm mypaste
+            echo '
+              GOOGLE_CLIENT_ID=${{ env.GOOGLE_CLIENT_ID }}
+              JWT_SIGN_KEY=${{ secrets.JWT_SIGN_KEY }}
+              ENABLE_AUTO_TLS=1
+              TLS_DOMAIN=${{ env.DOMAIN }}
+              TLS_CACHE_DIR=/var/www/cache
+              LOGIN_CALLBACK_URI=https://${{ env.DOMAIN }}/login-callback
+              SERVE_ADDR=:443
+            ' > .env
             podman run --name mypaste --env-file .env \
-              --volume /opt/mypaste/tls-cache:/var/www/cache -p 80:80 -p 443:443 -d ${{ env.IMAGE }}
+              --volume ./tls-cache:/var/www/cache -p 80:80 -p 443:443 -d ${{ env.IMAGE }}
             podman image prune -af
           "
