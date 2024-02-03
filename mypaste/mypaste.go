@@ -6,38 +6,41 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	echomw "github.com/labstack/echo/v4/middleware"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/acme/autocert"
 	"golang.org/x/crypto/sha3"
 )
 
-func StartService() {
-	gClientId := os.Getenv("GOOGLE_CLIENT_ID")
-	jwtSignKey := os.Getenv("JWT_SIGN_KEY")
-	webappBundleDir := os.Getenv("WEBAPP_BUNDLE_DIR")
-	loginCallbackUri := os.Getenv("LOGIN_CALLBACK_URI")
-	serveAddr := os.Getenv("SERVE_ADDR")
-	enableAutoTLS := os.Getenv("ENABLE_AUTO_TLS")
-	tlsCacheDir := os.Getenv("TLS_CACHE_DIR")
-	tlsDomain := os.Getenv("TLS_DOMAIN")
+func Start() {
+	gClientId := getEnvVerbose("GOOGLE_CLIENT_ID", false)
+	jwtSignKey := getEnvVerbose("JWT_SIGN_KEY", true)
+	webappBundleDir := getEnvVerbose("WEBAPP_BUNDLE_DIR", false)
+	loginCallbackUri := getEnvVerbose("LOGIN_CALLBACK_URI", false)
+	serveAddr := getEnvVerbose("SERVE_ADDR", false)
+	enableAutoTLS := getEnvVerbose("ENABLE_AUTO_TLS", false)
+	tlsCacheDir := getEnvVerbose("TLS_CACHE_DIR", false)
+	tlsDomain := getEnvVerbose("TLS_DOMAIN", false)
+	redisUrl := getEnvVerbose("REDIS_URL", false)
 
 	loginCallbackEndpoint := parseLoginCallbackEndpoint(loginCallbackUri)
 
-	log.Println("gClientId:                   ", gClientId)
-	log.Println("jwtSignKey (hash):           ", hash(jwtSignKey)[:10])
-	log.Println("webappBundleDir:             ", webappBundleDir)
-	log.Println("loginCallbackUri:            ", loginCallbackUri)
-	log.Println("loginCallbackEndpoint:       ", loginCallbackEndpoint)
-	log.Println("serveAddr:                   ", serveAddr)
-	log.Println("enableAutoTLS:               ", enableAutoTLS)
-	log.Println("tlsCacheDir:                 ", tlsCacheDir)
-	log.Println("tlsDomain:                   ", tlsDomain)
+	redisOpts, err := redis.ParseURL(redisUrl)
+	if err != nil {
+		panic(fmt.Errorf("failed to parse redis url, %v, %w", redisUrl, err))
+	}
+	redisClient := redis.NewClient(redisOpts)
+	streamService := NewRedisStreamService(redisClient, RedisStreamConfig{
+		MaxLen:    100,
+		ReadCount: 100,
+		ReadBlock: 5 * time.Minute,
+	})
 
 	e := echo.New()
 	e.Use(echomw.Recover())
@@ -47,15 +50,19 @@ func StartService() {
 	e.Renderer = NewRenderer()
 	e.HideBanner = true
 
-	authmw := NewAuthMiddleware(jwtSignKey)
-
 	e.GET("/login", MakeLoginPageHandler(gClientId, loginCallbackUri))
 	e.POST(loginCallbackEndpoint, MakeLoginCallbackHandler(NewIdTokenValidator(gClientId), jwtSignKey))
 
-	e.POST("/api/auth/authenticate", MakeAuthenticateHandler(jwtSignKey), authmw)
-	e.POST("/api/auth/logout", MakeLogoutHandler(), authmw)
+	authmw := NewAuthMiddleware(jwtSignKey)
+	api := e.Group("/api", authmw)
 
-	e.Any("/api/*", ApiNotFoundHandler, authmw)
+	api.POST("/auth/authenticate", MakeAuthenticateHandler(jwtSignKey))
+	api.POST("/auth/logout", MakeLogoutHandler())
+
+	api.POST("/event", MakeAddEventHandler(streamService))
+	api.GET("/event", MakeReadEventsHandler(streamService))
+
+	api.Any("/*", ApiNotFoundHandler)
 
 	if enableAutoTLS != "1" {
 		e.Logger.Fatal(e.Start(serveAddr))
@@ -96,6 +103,16 @@ func RootHandler(c echo.Context) error {
 	return c.String(http.StatusOK, "Hello, Welcome!")
 }
 
+func getEnvVerbose(name string, sensitive bool) string {
+	value := os.Getenv(name)
+	printValue := value
+	if sensitive {
+		printValue = hash(printValue)[:10] + " (hash)"
+	}
+	fmt.Printf("%s  :  %s\n", name, printValue)
+	return value
+}
+
 //go:embed templates/*
 var templateFS embed.FS
 
@@ -111,13 +128,4 @@ func NewRenderer() *Renderer {
 
 func (t *Renderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
 	return t.template.ExecuteTemplate(w, name+".html", data)
-}
-
-// to generate mock
-type EchoContext interface {
-	echo.Context
-}
-
-type EchoLogger interface {
-	echo.Logger
 }

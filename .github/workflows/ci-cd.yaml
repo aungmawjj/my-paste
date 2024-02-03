@@ -62,7 +62,12 @@ jobs:
               LOGIN_CALLBACK_URI=https://${{ env.DOMAIN }}/login-callback
               SERVE_ADDR=:443
             ' > .env
-            podman run --name mypaste --env-file .env \
-              --volume ./tls-cache:/var/www/cache -p 80:80 -p 443:443 -d ${{ env.IMAGE }}
+            podman run --name mypaste \
+              --env-file .env \
+              --volume ./tls-cache:/var/www/cache \
+              --restart always \
+              --oom-kill-disable \
+              -p 80:80 -p 443:443 \
+              -d ${{ env.IMAGE }}
             podman image prune -af
           "

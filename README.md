@@ -12,16 +12,6 @@ go mod tidy
 ```
 
 ### Test
-#### Install mockery
-```bash
-go install github.com/vektra/mockery/v2@v2.40.1
-```
-
-#### Generate mocks
-```bash
-mockery
-```
-
 #### Run tests
 ```bash
 go test -v ./...
@@ -32,14 +22,20 @@ go test -v ./...
 go run .
 ```
 
+### Generate Mocks
+```bash
+go install github.com/vektra/mockery/v2@v2.40.1
+mockery
+```
+
 ## Todo
 - [x] Google sign in
 - [x] Test setup
 - [x] Webapp login redirect
 - [x] Env variables
-- [ ] CICD to deploy on AWS
-- [ ] Redis stream
-- [ ] Paste API (Add, Read, Delete)
-- [ ] Webapp use paste API
-- [ ] Webapp store pastes local
+- [x] CICD to deploy on AWS
+- [x] Redis stream
+- [x] Event API (Add, Read)
+- [ ] Webapp use event API
+- [ ] Webapp store event local
 - [ ] Webapp e2e encrypt and key sharing between clients
