@@ -33,7 +33,11 @@ function Pastes() {
     let lastId = "";
     const fetchLoop = async () => {
       while (loop) {
-        lastId = await fetchEvents(ctrl, lastId);
+        try {
+          lastId = await fetchEvents(ctrl, lastId);
+        } catch (err) {
+          console.log(err);
+        }
       }
     };
     fetchLoop().catch(console.error);
