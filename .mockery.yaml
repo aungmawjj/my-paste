@@ -6,6 +6,6 @@ outpkg: "{{.PackageName}}"
 filename: "mock_{{.InterfaceName}}_gen_test.go"
 
 packages:
-  github.com/aungmawjj/my-paste/mypaste:
+  github.com/aungmawjj/mypaste/mypaste:
     interfaces:
       IdTokenValidator:

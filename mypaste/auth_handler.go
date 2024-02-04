@@ -12,11 +12,6 @@ import (
 	"google.golang.org/api/idtoken"
 )
 
-type User struct {
-	Name  string
-	Email string
-}
-
 type TokenClaims struct {
 	User
 	jwt.RegisteredClaims
@@ -45,7 +40,7 @@ func (v *idTokenValidator) Validate(ctx context.Context, idToken string) (*idtok
 
 func NewAuthMiddleware(jwtSignKey string) echo.MiddlewareFunc {
 	config := echojwt.Config{
-		TokenLookup: "cookie:" + tokenCookieName,
+		TokenLookup: "header:Authorization:Bearer ,cookie:" + tokenCookieName,
 		NewClaimsFunc: func(c echo.Context) jwt.Claims {
 			return new(TokenClaims)
 		},
@@ -54,9 +49,9 @@ func NewAuthMiddleware(jwtSignKey string) echo.MiddlewareFunc {
 	return echojwt.WithConfig(config)
 }
 
-func GetTokenClaims(c echo.Context) *TokenClaims {
+func GetAuthorizedUser(c echo.Context) User {
 	token := c.Get("user").(*jwt.Token)
-	return token.Claims.(*TokenClaims)
+	return token.Claims.(*TokenClaims).User
 }
 
 func MakeLoginPageHandler(gClientId, callbackUri string) echo.HandlerFunc {
@@ -156,14 +151,14 @@ func expiredTokenCookie() *http.Cookie {
 
 func MakeAuthenticateHandler(jwtSignKey string) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		claims := GetTokenClaims(c)
-		token := generateToken(claims.User)
+		user := GetAuthorizedUser(c)
+		token := generateToken(user)
 		signedToken, err := token.SignedString([]byte(jwtSignKey))
 		if err != nil {
 			return fmt.Errorf("failed to sign token. %w", err)
 		}
 		c.SetCookie(newTokenCookie(signedToken))
-		return c.JSON(http.StatusOK, claims.User)
+		return c.JSON(http.StatusOK, user)
 	}
 }
 
