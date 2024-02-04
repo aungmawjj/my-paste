@@ -2,6 +2,7 @@ package mypaste
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -67,9 +68,15 @@ func (s *redisStream) Read(ctx context.Context, stream, lastId string) ([]Event,
 func (s *redisStream) toEvents(messages []redis.XMessage) []Event {
 	events := make([]Event, 0, len(messages))
 	for _, m := range messages {
+		var timestamp int64
+		if tstr, ok := m.Values[eventTimestampKey].(string); ok {
+			timestamp, _ = strconv.ParseInt(tstr, 10, 64)
+		}
+		payload, _ := m.Values[eventPayloadKey].(string)
 		events = append(events, Event{
-			Id:      m.ID,
-			Payload: m.Values[eventPayloadKey].(string),
+			Id:        m.ID,
+			Payload:   payload,
+			Timestamp: timestamp,
 		})
 	}
 	return events
