@@ -56,7 +56,7 @@ jobs:
             echo '
               GOOGLE_CLIENT_ID=${{ env.GOOGLE_CLIENT_ID }}
               JWT_SIGN_KEY=${{ secrets.JWT_SIGN_KEY }}
-              REDIS_URL: redis://localhost:6379
+              REDIS_URL=redis://localhost:6379
               ENABLE_AUTO_TLS=1
               TLS_DOMAIN=${{ env.DOMAIN }}
               TLS_CACHE_DIR=/var/www/cache
