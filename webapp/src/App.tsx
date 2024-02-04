@@ -1,21 +1,13 @@
 import axios, { AxiosError } from "axios";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Pastes from "./Pastes";
-
-type User = Record<string, string>;
+import Loading from "./Loading";
+import { User } from "./model";
+import TopBar from "./TopBar";
+import { Box } from "@chakra-ui/react";
 
 function App() {
   const [user, setUser] = useState<User>();
-  const [loading, setLoading] = useState(true);
-
-  const handleLogout = useCallback(() => {
-    axios
-      .post("/api/auth/logout", null)
-      .then(() => {
-        window.location.replace("/login");
-      })
-      .catch(console.error);
-  }, []);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -23,7 +15,6 @@ function App() {
       .post<User>("/api/auth/authenticate", null, { signal: ctrl.signal })
       .then((resp) => {
         setUser(resp.data);
-        setLoading(false);
       })
       .catch((err: Error | AxiosError) => {
         if (axios.isAxiosError(err) && err.response?.status == 401) {
@@ -36,37 +27,24 @@ function App() {
     return () => ctrl.abort();
   }, []);
 
-  return loading ? (
-    <div
-      style={{
-        height: "80vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "2rem",
-      }}
-    >
-      Loading...
-    </div>
-  ) : (
+  if (!user) return <Loading />;
+  return (
     <>
-      <div
-        style={{
-          height: 56,
-          position: "fixed",
-          top: 0,
-          background: "white",
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 16,
-        }}
+      <Box
+        height="80px"
+        width="100%"
+        position="fixed"
+        top={0}
+        zIndex={1}
+        bg="rgba(255, 255, 255, 0.5)"
+        backdropFilter="auto"
+        backdropBlur="10px"
       >
-        {user?.Name} <button onClick={handleLogout}>Logout</button>
-      </div>
-      <div style={{ paddingTop: 56 }}>
+        <TopBar user={user} />
+      </Box>
+      <Box pt="80px">
         <Pastes />
-      </div>
+      </Box>
     </>
   );
 }

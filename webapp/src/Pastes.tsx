@@ -1,5 +1,17 @@
 import { useCallback, useState, useEffect } from "react";
 import axios from "axios";
+import {
+  Box,
+  Flex,
+  Icon,
+  IconButton,
+  Textarea,
+  Text,
+  Divider,
+  Spacer,
+} from "@chakra-ui/react";
+import { IoSend } from "react-icons/io5";
+import { MdContentCopy } from "react-icons/md";
 
 type Event = {
   Id: string;
@@ -22,7 +34,7 @@ function Pastes() {
         params: { lastId: lastId },
       })
       .then((resp) => {
-        setPastes((old) => [...old, ...resp.data]);
+        setPastes((old) => [...old, ...resp.data].reverse());
         return resp.data[resp.data.length - 1].Id;
       });
   }, []);
@@ -47,27 +59,59 @@ function Pastes() {
     };
   }, [fetchEvents]);
 
+  const onCopy = useCallback((text: string) => {
+    navigator.clipboard.writeText(text).catch(console.error);
+  }, []);
+
   return (
     <>
-      <form
-        onSubmit={(e) => e.preventDefault()}
-        style={{ display: "flex", flexDirection: "row", gap: 16 }}
-      >
-        <input
-          placeholder="New Text"
-          value={payload}
-          onChange={(e) => setPayload(e.target.value)}
-        />
-        <button type="submit" onClick={() => onSubmit(payload)}>
-          Add
-        </button>
+      <form onSubmit={(e) => e.preventDefault()}>
+        <Flex gap={2} px={10} pb={4} alignItems="flex-end">
+          <Textarea
+            placeholder="Enter Text"
+            size="sm"
+            rows={2}
+            onChange={(e) => setPayload(e.target.value)}
+          />
+          <IconButton
+            aria-label="Save"
+            type="submit"
+            size="lg"
+            onClick={() => onSubmit(payload)}
+            icon={<Icon as={IoSend} boxSize={6} />}
+          />
+        </Flex>
       </form>
 
-      <ul>
+      <Box pb={10}>
         {pastes.map((p) => (
-          <li key={p.Id}>{p.Payload}</li>
+          <Box
+            key={p.Id}
+            px={6}
+            py={3}
+            m={4}
+            border="1px solid #eee"
+            borderRadius={8}
+          >
+            <Flex alignItems="center">
+              <Text fontSize="xs" color="gray">
+                {new Date(p.Timestamp * 1000).toLocaleString()}
+              </Text>
+              <Spacer />
+              <IconButton
+                aria-label="copy"
+                variant="text"
+                borderRadius={10}
+                size="sm"
+                onClick={() => onCopy(p.Payload)}
+                icon={<Icon as={MdContentCopy} boxSize={6} />}
+              />
+            </Flex>
+            <Divider my={1} />
+            <Text fontSize="sm">{p.Payload}</Text>
+          </Box>
         ))}
-      </ul>
+      </Box>
     </>
   );
 }
