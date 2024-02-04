@@ -6,6 +6,7 @@ type User struct {
 }
 
 type Event struct {
-	Id      string
-	Payload string
+	Id        string
+	Payload   string
+	Timestamp int64
 }

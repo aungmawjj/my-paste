@@ -7,7 +7,10 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const eventPayloadKey = "payload"
+const (
+	eventPayloadKey   = "payload"
+	eventTimestampKey = "timestamp"
+)
 
 type StreamService interface {
 	Add(ctx context.Context, stream, payload string) (string, error)
@@ -37,7 +40,10 @@ func NewRedisStreamService(client *redis.Client, config RedisStreamConfig) Strea
 func (s *redisStream) Add(ctx context.Context, stream, payload string) (string, error) {
 	return s.client.XAdd(ctx, &redis.XAddArgs{
 		Stream: s.streamId(stream),
-		Values: []string{eventPayloadKey, payload},
+		Values: map[string]interface{}{
+			eventPayloadKey:   payload,
+			eventTimestampKey: time.Now().Unix(),
+		},
 		MaxLen: s.config.MaxLen,
 		Approx: true,
 	}).Result()

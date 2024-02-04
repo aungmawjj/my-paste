@@ -36,6 +36,7 @@ mockery
 - [x] CICD to deploy on AWS
 - [x] Redis stream
 - [x] Event API (Add, Read)
-- [ ] Webapp use event API
+- [x] Webapp use event API
+- [ ] Webapp improve UI design
 - [ ] Webapp store event local
 - [ ] Webapp e2e encrypt and key sharing between clients

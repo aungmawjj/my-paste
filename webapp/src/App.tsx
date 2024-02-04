@@ -1,5 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { useCallback, useEffect, useState } from "react";
+import Pastes from "./Pastes";
 
 type User = Record<string, string>;
 
@@ -11,7 +12,7 @@ function App() {
     axios
       .post("/api/auth/logout", null)
       .then(() => {
-        console.log("logout successful");
+        window.location.replace("/login");
       })
       .catch(console.error);
   }, []);
@@ -34,7 +35,8 @@ function App() {
       });
     return () => ctrl.abort();
   }, []);
-  return (
+
+  return loading ? (
     <div
       style={{
         height: "80vh",
@@ -44,14 +46,28 @@ function App() {
         gap: "2rem",
       }}
     >
-      {loading ? (
-        <>Loading...</>
-      ) : (
-        <>
-          Hello {user?.Name} <button onClick={handleLogout}>Logout</button>
-        </>
-      )}
+      Loading...
     </div>
+  ) : (
+    <>
+      <div
+        style={{
+          height: 56,
+          position: "fixed",
+          top: 0,
+          background: "white",
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 16,
+        }}
+      >
+        {user?.Name} <button onClick={handleLogout}>Logout</button>
+      </div>
+      <div style={{ paddingTop: 56 }}>
+        <Pastes />
+      </div>
+    </>
   );
 }
 
