@@ -1,17 +1,22 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
   Box,
-  Flex,
   Icon,
   IconButton,
   Textarea,
   Text,
-  Divider,
-  Spacer,
+  useDisclosure,
+  Modal,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
+  ModalOverlay,
+  ModalContent,
+  Button,
 } from "@chakra-ui/react";
-import { IoSend } from "react-icons/io5";
-import { MdContentCopy } from "react-icons/md";
+import { MdAdd, MdContentCopy, MdSave } from "react-icons/md";
 
 type Event = {
   Id: string;
@@ -21,11 +26,6 @@ type Event = {
 
 function Pastes() {
   const [pastes, setPastes] = useState<Event[]>([]);
-  const [payload, setPayload] = useState("");
-
-  const onSubmit = useCallback((payload: string) => {
-    axios.post("/api/event", { Payload: payload }).catch(console.error);
-  }, []);
 
   const fetchEvents = useCallback((ctrl: AbortController, lastId: string) => {
     return axios
@@ -59,56 +59,94 @@ function Pastes() {
     };
   }, [fetchEvents]);
 
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [payload, setPayload] = useState("");
+  const textRef = useRef(null);
+
   const onCopy = useCallback((text: string) => {
     navigator.clipboard.writeText(text).catch(console.error);
   }, []);
 
+  const onSave = useCallback(
+    (payload: string) => {
+      axios.post("/api/event", { Payload: payload }).catch(console.error);
+      payload = "";
+      onClose();
+    },
+    [onClose]
+  );
+
   return (
     <>
-      <form onSubmit={(e) => e.preventDefault()}>
-        <Flex gap={2} px={10} pb={4} alignItems="flex-end">
-          <Textarea
-            placeholder="Enter Text"
-            size="sm"
-            rows={2}
-            onChange={(e) => setPayload(e.target.value)}
-          />
-          <IconButton
-            aria-label="Save"
-            type="submit"
-            size="lg"
-            onClick={() => onSubmit(payload)}
-            icon={<Icon as={IoSend} boxSize={6} />}
-          />
-        </Flex>
-      </form>
+      <IconButton
+        position="fixed"
+        bottom={6}
+        right={6}
+        zIndex={2}
+        aria-label="Add"
+        width="56px"
+        height="56px"
+        colorScheme="teal"
+        variant="solid"
+        icon={<Icon as={MdAdd} boxSize={6} />}
+        onClick={onOpen}
+      />
+      <Modal initialFocusRef={textRef} isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Paste Here!</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Textarea
+              placeholder="Enter Text"
+              size="md"
+              rows={5}
+              ref={textRef}
+              onChange={(e) => setPayload(e.target.value)}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              size="lg"
+              colorScheme="teal"
+              onClick={() => onSave(payload)}
+              leftIcon={<Icon as={MdSave} boxSize={6} />}
+              isDisabled={payload == ""}
+            >
+              Save
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
-      <Box pb={10}>
+      <Box pb={20}>
         {pastes.map((p) => (
           <Box
+            position="relative"
             key={p.Id}
-            px={6}
-            py={3}
+            p={4}
             m={4}
             border="1px solid #eee"
-            borderRadius={8}
+            rounded="lg"
           >
-            <Flex alignItems="center">
-              <Text fontSize="xs" color="gray">
-                {new Date(p.Timestamp * 1000).toLocaleString()}
-              </Text>
-              <Spacer />
-              <IconButton
-                aria-label="copy"
-                variant="text"
-                borderRadius={10}
-                size="sm"
-                onClick={() => onCopy(p.Payload)}
-                icon={<Icon as={MdContentCopy} boxSize={6} />}
-              />
-            </Flex>
-            <Divider my={1} />
-            <Text fontSize="sm">{p.Payload}</Text>
+            <Text fontSize="xs" color="gray">
+              {new Date(p.Timestamp * 1000).toLocaleString()}
+            </Text>
+
+            <Text pt={2} fontSize="sm">
+              {p.Payload}
+            </Text>
+
+            <IconButton
+              position="absolute"
+              top={1}
+              right={1}
+              aria-label="copy"
+              variant="ghost"
+              size="md"
+              onClick={() => onCopy(p.Payload)}
+              icon={<Icon as={MdContentCopy} boxSize={6} />}
+            />
           </Box>
         ))}
       </Box>
