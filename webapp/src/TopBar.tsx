@@ -40,7 +40,7 @@ function TopBar({ user }: Readonly<Props>) {
       <Spacer />
       <Popover>
         <PopoverTrigger>
-          <Avatar size="md" name={user.Name} />
+          <Avatar size="sm" name={user.Name} />
         </PopoverTrigger>
         <PopoverContent>
           <PopoverArrow />

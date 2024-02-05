@@ -34,8 +34,8 @@ function Pastes() {
         params: { lastId: lastId },
       })
       .then((resp) => {
-        setPastes((old) => [...old, ...resp.data].reverse());
-        return resp.data[resp.data.length - 1].Id;
+        setPastes((old) => [...resp.data.reverse(), ...old]);
+        return resp.data[0].Id;
       });
   }, []);
 
@@ -88,6 +88,7 @@ function Pastes() {
         height="56px"
         colorScheme="teal"
         variant="solid"
+        boxShadow="xl"
         icon={<Icon as={MdAdd} boxSize={6} />}
         onClick={onOpen}
       />
@@ -126,7 +127,8 @@ function Pastes() {
             key={p.Id}
             p={4}
             m={4}
-            border="1px solid #eee"
+            border="1px"
+            borderColor="gray.200"
             rounded="lg"
           >
             <Text fontSize="xs" color="gray">
@@ -145,7 +147,7 @@ function Pastes() {
               variant="ghost"
               size="md"
               onClick={() => onCopy(p.Payload)}
-              icon={<Icon as={MdContentCopy} boxSize={6} />}
+              icon={<Icon color="gray.600" as={MdContentCopy} boxSize={6} />}
             />
           </Box>
         ))}
