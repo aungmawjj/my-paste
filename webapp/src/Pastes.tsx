@@ -84,15 +84,21 @@ function Pastes() {
         right={6}
         zIndex={2}
         aria-label="Add"
-        width="56px"
-        height="56px"
-        colorScheme="teal"
-        variant="solid"
+        color="white"
+        bg="gray.700"
+        width="80px"
+        height="64px"
+        borderRadius="24px"
         boxShadow="xl"
-        icon={<Icon as={MdAdd} boxSize={6} />}
+        icon={<Icon as={MdAdd} boxSize={8} />}
         onClick={onOpen}
       />
-      <Modal initialFocusRef={textRef} isOpen={isOpen} onClose={onClose}>
+      <Modal
+        initialFocusRef={textRef}
+        size="full"
+        isOpen={isOpen}
+        onClose={onClose}
+      >
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Paste Here!</ModalHeader>
@@ -108,8 +114,9 @@ function Pastes() {
           </ModalBody>
           <ModalFooter>
             <Button
-              size="lg"
-              colorScheme="teal"
+              size="md"
+              color="white"
+              bgColor="gray.700"
               onClick={() => onSave(payload)}
               leftIcon={<Icon as={MdSave} boxSize={6} />}
               isDisabled={payload == ""}
@@ -125,11 +132,12 @@ function Pastes() {
           <Box
             position="relative"
             key={p.Id}
-            p={4}
+            py={6}
+            px={8}
             m={4}
             border="1px"
-            borderColor="gray.200"
-            rounded="lg"
+            borderColor="gray.100"
+            borderRadius="2xl"
           >
             <Text fontSize="xs" color="gray">
               {new Date(p.Timestamp * 1000).toLocaleString()}
@@ -142,12 +150,12 @@ function Pastes() {
             <IconButton
               position="absolute"
               top={1}
-              right={1}
+              right={3}
               aria-label="copy"
               variant="ghost"
-              size="md"
+              size="lg"
               onClick={() => onCopy(p.Payload)}
-              icon={<Icon color="gray.600" as={MdContentCopy} boxSize={6} />}
+              icon={<Icon color="gray.700" as={MdContentCopy} boxSize={6} />}
             />
           </Box>
         ))}

@@ -138,6 +138,7 @@ func newTokenCookie(token string) *http.Cookie {
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Now().Add(72 * time.Hour),
 	}
 }
 

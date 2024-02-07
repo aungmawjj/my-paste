@@ -36,9 +36,6 @@ function App() {
         position="fixed"
         top={0}
         zIndex={1}
-        bg="rgba(255, 255, 255, 0.5)"
-        backdropFilter="auto"
-        backdropBlur="10px"
       >
         <TopBar user={user} />
       </Box>

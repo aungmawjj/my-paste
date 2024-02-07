@@ -7,6 +7,7 @@ import {
   Flex,
   Spacer,
   Icon,
+  Image,
   Popover,
   PopoverTrigger,
   PopoverContent,
@@ -33,14 +34,21 @@ function TopBar({ user }: Readonly<Props>) {
   }, []);
 
   return (
-    <Flex height="100%" alignItems="center" gap={2} px={4}>
-      <Text fontSize="lg" fontWeight={700}>
-        My Paste
-      </Text>
+    <Flex
+      height="100%"
+      alignItems="center"
+      gap={2}
+      px={4}
+      bg="rgba(255, 255, 255, 0.5)"
+      backdropFilter="auto"
+      backdropBlur="20px"
+      boxShadow="sm"
+    >
+      <Image src="/LogoMyPaste.png" />
       <Spacer />
       <Popover>
         <PopoverTrigger>
-          <Avatar size="sm" name={user.Name} />
+          <Avatar size="md" name={user.Name} />
         </PopoverTrigger>
         <PopoverContent>
           <PopoverArrow />

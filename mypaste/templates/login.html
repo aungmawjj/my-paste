@@ -2,17 +2,51 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/IconMyPaste.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Paste</title>
+    <style>
+      body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .login-card {
+        border-radius: 16px;
+        border: 1px solid #ddd;
+        padding: 40px 20px 60px 20px;
+        width: calc(100% - 120px);
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+      }
+
+      @media (min-width: 600px) {
+        .login-card {
+          width: 400px;
+        }
+      }
+    </style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <div
       id="g_id_onload"
       data-ux_mode="redirect"
       data-client_id="{{.GoogleClientId}}"
       data-login_uri="{{.LoginCallbackUri}}"
+      data-size="large"
     ></div>
-    <div class="g_id_signin" data-type="standard"></div>
+
+    <div class="login-card">
+      <img src="/LogoMyPaste.png" alt="My Paste" />
+      <div class="g_id_signin" data-type="standard"></div>
+    </div>
   </body>
 </html>
