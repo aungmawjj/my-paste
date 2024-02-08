@@ -31,7 +31,7 @@ function App() {
   return (
     <>
       <Box
-        height="80px"
+        height="72px"
         width="100%"
         position="fixed"
         top={0}
@@ -39,7 +39,7 @@ function App() {
       >
         <TopBar user={user} />
       </Box>
-      <Box pt="80px">
+      <Box pt="72px">
         <Pastes />
       </Box>
     </>

@@ -39,12 +39,12 @@ function TopBar({ user }: Readonly<Props>) {
       alignItems="center"
       gap={2}
       px={4}
-      bg="rgba(255, 255, 255, 0.5)"
+      bg="rgba(255, 255, 255, 0.7)"
       backdropFilter="auto"
-      backdropBlur="20px"
+      backdropBlur="10px"
       boxShadow="sm"
     >
-      <Image src="/LogoMyPaste.png" />
+      <Image src="/LogoMyPaste.svg" />
       <Spacer />
       <Popover>
         <PopoverTrigger>

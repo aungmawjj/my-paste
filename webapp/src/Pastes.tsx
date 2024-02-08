@@ -86,7 +86,7 @@ function Pastes() {
         aria-label="Add"
         color="white"
         bg="gray.700"
-        width="80px"
+        width="64px"
         height="64px"
         borderRadius="24px"
         boxShadow="xl"
@@ -136,7 +136,7 @@ function Pastes() {
             px={8}
             m={4}
             border="1px"
-            borderColor="gray.100"
+            borderColor="gray.200"
             borderRadius="2xl"
           >
             <Text fontSize="xs" color="gray">
