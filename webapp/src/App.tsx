@@ -1,10 +1,10 @@
 import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
-import Pastes from "./Pastes";
 import Loading from "./Loading";
 import { User } from "./model";
 import TopBar from "./TopBar";
-import { Box } from "@chakra-ui/react";
+import { Box, useConst } from "@chakra-ui/react";
+import { Outlet } from "react-router-dom";
 
 function App() {
   const [user, setUser] = useState<User>();
@@ -27,20 +27,15 @@ function App() {
     return () => ctrl.abort();
   }, []);
 
+  const topBarHeight = useConst("72px");
+  const px = useConst({ base: 4, md: 20, lg: 40, xl: 60, "2xl": 80 });
+
   if (!user) return <Loading />;
   return (
     <>
-      <Box
-        height="72px"
-        width="100%"
-        position="fixed"
-        top={0}
-        zIndex={1}
-      >
-        <TopBar user={user} />
-      </Box>
-      <Box pt="72px">
-        <Pastes />
+      <TopBar user={user} height={topBarHeight} px={px} />
+      <Box pt={topBarHeight} px={px}>
+        <Outlet />
       </Box>
     </>
   );

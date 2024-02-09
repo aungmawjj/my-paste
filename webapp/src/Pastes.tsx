@@ -1,22 +1,8 @@
-import { useCallback, useState, useEffect, useRef } from "react";
+import { useCallback, useState, useEffect } from "react";
 import axios from "axios";
-import {
-  Box,
-  Icon,
-  IconButton,
-  Textarea,
-  Text,
-  useDisclosure,
-  Modal,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  ModalFooter,
-  ModalOverlay,
-  ModalContent,
-  Button,
-} from "@chakra-ui/react";
-import { MdAdd, MdContentCopy, MdSave } from "react-icons/md";
+import { Box, Hide, Icon, IconButton, Text } from "@chakra-ui/react";
+import { MdAdd, MdContentCopy } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 
 type Event = {
   Id: string;
@@ -26,6 +12,7 @@ type Event = {
 
 function Pastes() {
   const [pastes, setPastes] = useState<Event[]>([]);
+  const navigate = useNavigate();
 
   const fetchEvents = useCallback((ctrl: AbortController, lastId: string) => {
     return axios
@@ -48,7 +35,7 @@ function Pastes() {
         try {
           lastId = await fetchEvents(ctrl, lastId);
         } catch (err) {
-          console.log(err);
+          console.error("failed to fatch events: ", err);
         }
       }
     };
@@ -59,73 +46,28 @@ function Pastes() {
     };
   }, [fetchEvents]);
 
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [payload, setPayload] = useState("");
-  const textRef = useRef(null);
-
   const onCopy = useCallback((text: string) => {
     navigator.clipboard.writeText(text).catch(console.error);
   }, []);
 
-  const onSave = useCallback(
-    (payload: string) => {
-      axios.post("/api/event", { Payload: payload }).catch(console.error);
-      payload = "";
-      onClose();
-    },
-    [onClose]
-  );
-
   return (
     <>
-      <IconButton
-        position="fixed"
-        bottom={6}
-        right={6}
-        zIndex={2}
-        aria-label="Add"
-        color="white"
-        bg="gray.700"
-        width="64px"
-        height="64px"
-        borderRadius="24px"
-        boxShadow="xl"
-        icon={<Icon as={MdAdd} boxSize={8} />}
-        onClick={onOpen}
-      />
-      <Modal
-        initialFocusRef={textRef}
-        size="full"
-        isOpen={isOpen}
-        onClose={onClose}
-      >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Paste Here!</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Textarea
-              placeholder="Enter Text"
-              size="md"
-              rows={5}
-              ref={textRef}
-              onChange={(e) => setPayload(e.target.value)}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              size="md"
-              color="white"
-              bgColor="gray.700"
-              onClick={() => onSave(payload)}
-              leftIcon={<Icon as={MdSave} boxSize={6} />}
-              isDisabled={payload == ""}
-            >
-              Save
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <Hide above="md">
+        <IconButton
+          position="fixed"
+          bottom={6}
+          right={6}
+          zIndex={2}
+          aria-label="Add"
+          colorScheme="brand"
+          width="56px"
+          height="56px"
+          borderRadius="16px"
+          boxShadow="xl"
+          icon={<Icon as={MdAdd} boxSize={8} />}
+          onClick={() => navigate("/add-paste")}
+        />
+      </Hide>
 
       <Box pb={20}>
         {pastes.map((p) => (
@@ -134,10 +76,10 @@ function Pastes() {
             key={p.Id}
             py={6}
             px={8}
-            m={4}
+            my={4}
             border="1px"
             borderColor="gray.200"
-            borderRadius="2xl"
+            borderRadius="24px"
           >
             <Text fontSize="xs" color="gray">
               {new Date(p.Timestamp * 1000).toLocaleString()}
@@ -150,12 +92,12 @@ function Pastes() {
             <IconButton
               position="absolute"
               top={1}
-              right={3}
+              right={4}
               aria-label="copy"
               variant="ghost"
-              size="lg"
+              size="md"
               onClick={() => onCopy(p.Payload)}
-              icon={<Icon color="gray.700" as={MdContentCopy} boxSize={6} />}
+              icon={<Icon color="gray.900" as={MdContentCopy} boxSize={6} />}
             />
           </Box>
         ))}
