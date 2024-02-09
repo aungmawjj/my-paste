@@ -19,6 +19,9 @@ export default defineConfig({
           },
         ],
       },
+      workbox: {
+        navigateFallbackDenylist: [/login/],
+      },
     }),
   ],
 });
