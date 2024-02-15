@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -40,11 +41,10 @@ func TestLoginCallbackHandler(t *testing.T) {
 		return url.Values{credentialFormKey: {credential}, csrfTokenFormKey: {csrfToken}}
 	}
 
-	assertFailedResponse := func(t *testing.T, rec *httptest.ResponseRecorder) {
-		assert.Equal(t, http.StatusSeeOther, rec.Result().StatusCode)
-		assert.Equal(t, "/login-failed", rec.Result().Header.Get("Location"))
-		idx := slices.IndexFunc(rec.Result().Cookies(), func(c *http.Cookie) bool { return c.Name == tokenCookieName })
-		assert.Equalf(t, -1, idx, "should not return token cookie")
+	assertFailedResponse := func(t *testing.T, resp *http.Response) {
+		assert.Equal(t, http.StatusSeeOther, resp.StatusCode)
+		assert.Equal(t, "/login-failed", resp.Header.Get("Location"))
+		assert.Nil(t, getResponseTokenCookie(resp), "should not return token cookie")
 	}
 
 	t.Run("ok", func(t *testing.T) {
@@ -59,18 +59,12 @@ func TestLoginCallbackHandler(t *testing.T) {
 		mockV := NewMockIdTokenValidator(t)
 		mockV.EXPECT().Validate(c.Request().Context(), "cred").Return(payload, nil)
 
-		err := MakeLoginCallbackHandler(mockV, jwtSignKey)(c)
+		err := LoginCallbackHandler(mockV, jwtSignKey)(c)
 
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusSeeOther, rec.Result().StatusCode)
 		assert.Equal(t, "/", rec.Result().Header.Get("Location"))
-
-		idx := slices.IndexFunc(rec.Result().Cookies(), func(c *http.Cookie) bool { return c.Name == tokenCookieName })
-		require.NotEqual(t, -1, idx, "should return token cookie")
-		tokenCookie := rec.Result().Cookies()[idx]
-		assert.True(t, tokenCookie.HttpOnly)
-		assert.True(t, tokenCookie.Secure)
-		assert.NotEqual(t, http.SameSiteNoneMode, tokenCookie.SameSite)
+		assertResponseTokenCookie(t, rec.Result(), jwtSignKey)
 	})
 
 	t.Run("fail if wrong content type", func(t *testing.T) {
@@ -81,10 +75,10 @@ func TestLoginCallbackHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := echo.New().NewContext(req, rec)
 
-		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
+		err := LoginCallbackHandler(nil, jwtSignKey)(c)
 
 		require.NoError(t, err)
-		assertFailedResponse(t, rec)
+		assertFailedResponse(t, rec.Result())
 	})
 
 	t.Run("fail if no request body", func(t *testing.T) {
@@ -93,10 +87,10 @@ func TestLoginCallbackHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := echo.New().NewContext(req, rec)
 
-		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
+		err := LoginCallbackHandler(nil, jwtSignKey)(c)
 
 		require.NoError(t, err)
-		assertFailedResponse(t, rec)
+		assertFailedResponse(t, rec.Result())
 	})
 
 	t.Run("fail if no csrf cookie", func(t *testing.T) {
@@ -105,10 +99,10 @@ func TestLoginCallbackHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := echo.New().NewContext(req, rec)
 
-		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
+		err := LoginCallbackHandler(nil, jwtSignKey)(c)
 
 		require.NoError(t, err)
-		assertFailedResponse(t, rec)
+		assertFailedResponse(t, rec.Result())
 	})
 
 	t.Run("fail if empty csrf token", func(t *testing.T) {
@@ -118,10 +112,10 @@ func TestLoginCallbackHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := echo.New().NewContext(req, rec)
 
-		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
+		err := LoginCallbackHandler(nil, jwtSignKey)(c)
 
 		require.NoError(t, err)
-		assertFailedResponse(t, rec)
+		assertFailedResponse(t, rec.Result())
 	})
 
 	t.Run("fail if different csrf token", func(t *testing.T) {
@@ -131,10 +125,10 @@ func TestLoginCallbackHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := echo.New().NewContext(req, rec)
 
-		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
+		err := LoginCallbackHandler(nil, jwtSignKey)(c)
 
 		require.NoError(t, err)
-		assertFailedResponse(t, rec)
+		assertFailedResponse(t, rec.Result())
 	})
 
 	t.Run("fail if invalid idtoken", func(t *testing.T) {
@@ -147,10 +141,67 @@ func TestLoginCallbackHandler(t *testing.T) {
 		mockV := NewMockIdTokenValidator(t)
 		mockV.EXPECT().Validate(c.Request().Context(), "cred").Return(nil, errors.New("invalid idtoken"))
 
-		err := MakeLoginCallbackHandler(mockV, jwtSignKey)(c)
+		err := LoginCallbackHandler(mockV, jwtSignKey)(c)
 
 		require.NoError(t, err)
-		assertFailedResponse(t, rec)
+		assertFailedResponse(t, rec.Result())
 	})
 
+}
+
+func TestAuthenticateHandler(t *testing.T) {
+	const jwtSignKey = "secret"
+	req := httptest.NewRequest(http.MethodPost, "/", nil)
+	rec := httptest.NewRecorder()
+	c := echo.New().NewContext(req, rec)
+	c.Set("user", generateToken(User{"name", "email"}))
+
+	err := AuthenticateHandler(jwtSignKey)(c)
+
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Result().StatusCode)
+	assertResponseTokenCookie(t, rec.Result(), jwtSignKey)
+}
+
+func TestMakeLogoutHandler(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/", nil)
+	rec := httptest.NewRecorder()
+	c := echo.New().NewContext(req, rec)
+
+	err := LogoutHandler()(c)
+
+	require.NoError(t, err)
+	tokenCookie := getResponseTokenCookie(rec.Result())
+	require.NotNil(t, tokenCookie, "should return token cookie")
+	assert.Empty(t, tokenCookie.Value)
+	assert.Less(t, tokenCookie.Expires, time.Now())
+}
+
+func assertResponseTokenCookie(t *testing.T, resp *http.Response, jwtSignKey string) {
+	tokenCookie := getResponseTokenCookie(resp)
+	require.NotNil(t, tokenCookie, "should return token cookie")
+
+	assert.True(t, tokenCookie.HttpOnly)
+	assert.True(t, tokenCookie.Secure)
+	assert.NotEqual(t, http.SameSiteNoneMode, tokenCookie.SameSite)
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.AddCookie(tokenCookie)
+	rec := httptest.NewRecorder()
+	c := echo.New().NewContext(req, rec)
+	authmw := NewAuthMiddleware(jwtSignKey)
+	okHandler := func(c echo.Context) error { return c.NoContent(http.StatusOK) }
+
+	err := authmw(okHandler)(c)
+
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Result().StatusCode)
+}
+
+func getResponseTokenCookie(resp *http.Response) *http.Cookie {
+	idx := slices.IndexFunc(resp.Cookies(), func(c *http.Cookie) bool { return c.Name == tokenCookieName })
+	if idx == -1 {
+		return nil
+	}
+	return resp.Cookies()[idx]
 }

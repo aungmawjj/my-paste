@@ -3,6 +3,7 @@ package mypaste
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -14,7 +15,7 @@ const (
 )
 
 type StreamService interface {
-	Add(ctx context.Context, stream, payload string) (string, error)
+	Add(ctx context.Context, stream string, event Event) (Event, error)
 	Read(ctx context.Context, stream, lastId string) ([]Event, error)
 }
 
@@ -38,16 +39,22 @@ func NewRedisStreamService(client *redis.Client, config RedisStreamConfig) Strea
 	}
 }
 
-func (s *redisStream) Add(ctx context.Context, stream, payload string) (string, error) {
-	return s.client.XAdd(ctx, &redis.XAddArgs{
+func (s *redisStream) Add(ctx context.Context, stream string, event Event) (Event, error) {
+	event.Timestamp = time.Now().Unix()
+	id, err := s.client.XAdd(ctx, &redis.XAddArgs{
 		Stream: s.streamId(stream),
 		Values: map[string]interface{}{
-			eventPayloadKey:   payload,
-			eventTimestampKey: time.Now().Unix(),
+			eventPayloadKey:   event.Payload,
+			eventTimestampKey: event.Timestamp,
 		},
 		MaxLen: s.config.MaxLen,
 		Approx: true,
 	}).Result()
+	if err != nil {
+		return event, err
+	}
+	event.Id = id
+	return event, nil
 }
 
 func (s *redisStream) Read(ctx context.Context, stream, lastId string) ([]Event, error) {
@@ -59,10 +66,13 @@ func (s *redisStream) Read(ctx context.Context, stream, lastId string) ([]Event,
 		Count:   s.config.ReadCount,
 		Block:   s.config.ReadBlock,
 	}).Result()
-	if err != nil {
-		return nil, err
+	if err == nil {
+		return s.toEvents(res[0].Messages), nil
 	}
-	return s.toEvents(res[0].Messages), nil
+	if strings.Contains(strings.ToLower(err.Error()), "redis: nil") {
+		return s.toEvents(nil), nil
+	}
+	return nil, err
 }
 
 func (s *redisStream) toEvents(messages []redis.XMessage) []Event {

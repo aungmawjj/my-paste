@@ -7,6 +7,7 @@ import {
   Flex,
   Spacer,
   Icon,
+  Image,
   Popover,
   PopoverTrigger,
   PopoverContent,
@@ -15,14 +16,20 @@ import {
   PopoverCloseButton,
   PopoverHeader,
   PopoverBody,
+  Box,
+  BoxProps,
+  Hide,
 } from "@chakra-ui/react";
-import { MdLogout } from "react-icons/md";
+import { MdAdd, MdLogout } from "react-icons/md";
+import { useLocation, useNavigate } from "react-router-dom";
 
 type Props = {
   user: User;
+  height?: BoxProps["height"];
+  px?: BoxProps["px"];
 };
 
-function TopBar({ user }: Readonly<Props>) {
+function TopBar({ user, height, px }: Readonly<Props>) {
   const handleLogout = useCallback(() => {
     axios
       .post("/api/auth/logout", null)
@@ -32,34 +39,61 @@ function TopBar({ user }: Readonly<Props>) {
       .catch(console.error);
   }, []);
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
   return (
-    <Flex height="100%" alignItems="center" gap={2} px={4}>
-      <Text fontSize="lg" fontWeight={700}>
-        My Paste
-      </Text>
-      <Spacer />
-      <Popover>
-        <PopoverTrigger>
-          <Avatar size="md" name={user.Name} />
-        </PopoverTrigger>
-        <PopoverContent>
-          <PopoverArrow />
-          <PopoverCloseButton />
-          <PopoverHeader textAlign="center">{user.Name}</PopoverHeader>
-          <PopoverBody textAlign="center">
-            <Text fontSize="sm" mt={4} mb={6}>
-              {user.Email}
-            </Text>
+    <Box
+      height={height}
+      width="100%"
+      position="fixed"
+      top={0}
+      zIndex={1}
+      bg="rgba(255, 255, 255, 0.7)"
+      backdropFilter="auto"
+      backdropBlur="10px"
+      boxShadow="sm"
+      borderBottom="1px solid"
+      borderBottomColor="gray.100"
+      px={px}
+    >
+      <Flex height="100%" alignItems="center" gap={6}>
+        <Image src="/LogoMyPaste.svg" />
+        <Spacer />
+        {!location.pathname.includes("add-paste") && (
+          <Hide below="md">
             <Button
-              leftIcon={<Icon as={MdLogout} boxSize={6} />}
-              onClick={handleLogout}
+              colorScheme="brand"
+              leftIcon={<Icon as={MdAdd} boxSize={6} />}
+              onClick={() => navigate("/add-paste")}
             >
-              Logout
+              Add
             </Button>
-          </PopoverBody>
-        </PopoverContent>
-      </Popover>
-    </Flex>
+          </Hide>
+        )}
+        <Popover autoFocus={false}>
+          <PopoverTrigger>
+            <Avatar as={Button} size="md" name={user.Name} />
+          </PopoverTrigger>
+          <PopoverContent mx={2}>
+            <PopoverArrow />
+            <PopoverCloseButton />
+            <PopoverHeader textAlign="center">{user.Name}</PopoverHeader>
+            <PopoverBody textAlign="center">
+              <Text fontSize="sm" mt={4} mb={6}>
+                {user.Email}
+              </Text>
+              <Button
+                leftIcon={<Icon as={MdLogout} boxSize={6} />}
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
+            </PopoverBody>
+          </PopoverContent>
+        </Popover>
+      </Flex>
+    </Box>
   );
 }
 

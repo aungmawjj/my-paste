@@ -2,17 +2,62 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg" href="/IconMyPaste.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Paste</title>
+    <style>
+      body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .login-card {
+        border-radius: 16px;
+        border: 1px solid #ddd;
+        padding: 40px 20px 60px 20px;
+        width: calc(100% - 80px);
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .description {
+        font-weight: 200;
+        font-size: 0.8rem;
+        font-family: ui-monospace, Menlo, Monaco, "Cascadia Mono",
+          "Segoe UI Mono", "Roboto Mono", "Oxygen Mono", "Ubuntu Monospace",
+          "Source Code Pro", "Fira Mono", "Droid Sans Mono", "Courier New",
+          monospace;
+        text-align: center;
+      }
+
+      @media (min-width: 600px) {
+        .login-card {
+          width: 500px;
+        }
+      }
+    </style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <div
       id="g_id_onload"
       data-ux_mode="redirect"
       data-client_id="{{.GoogleClientId}}"
       data-login_uri="{{.LoginCallbackUri}}"
+      data-size="large"
     ></div>
-    <div class="g_id_signin" data-type="standard"></div>
+
+    <div class="login-card">
+      <img src="/LogoMyPaste.svg" alt="My Paste" />
+      <h4 class="description">Copy & Paste across your devices</h4>
+      <div class="g_id_signin" data-type="standard"></div>
+    </div>
   </body>
 </html>
