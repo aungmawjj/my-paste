@@ -137,7 +137,7 @@ func newTokenCookie(token string) *http.Cookie {
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteStrictMode,
 		Expires:  time.Now().Add(72 * time.Hour),
 	}
 }
