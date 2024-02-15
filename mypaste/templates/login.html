@@ -19,17 +19,27 @@
         border-radius: 16px;
         border: 1px solid #ddd;
         padding: 40px 20px 60px 20px;
-        width: calc(100% - 120px);
+        width: calc(100% - 80px);
 
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 24px;
+        gap: 1rem;
+      }
+
+      .description {
+        font-weight: 200;
+        font-size: 0.8rem;
+        font-family: ui-monospace, Menlo, Monaco, "Cascadia Mono",
+          "Segoe UI Mono", "Roboto Mono", "Oxygen Mono", "Ubuntu Monospace",
+          "Source Code Pro", "Fira Mono", "Droid Sans Mono", "Courier New",
+          monospace;
+        text-align: center;
       }
 
       @media (min-width: 600px) {
         .login-card {
-          width: 400px;
+          width: 500px;
         }
       }
     </style>
@@ -46,6 +56,7 @@
 
     <div class="login-card">
       <img src="/LogoMyPaste.svg" alt="My Paste" />
+      <h4 class="description">Copy & Paste across your devices</h4>
       <div class="g_id_signin" data-type="standard"></div>
     </div>
   </body>
