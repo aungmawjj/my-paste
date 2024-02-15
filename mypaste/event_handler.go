@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func MakeAddEventHandler(streamService StreamService) echo.HandlerFunc {
+func AddEventHandler(streamService StreamService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		user := GetAuthorizedUser(c)
 		event := new(Event)
@@ -22,7 +22,7 @@ func MakeAddEventHandler(streamService StreamService) echo.HandlerFunc {
 	}
 }
 
-func MakeReadEventsHandler(streamService StreamService) echo.HandlerFunc {
+func ReadEventsHandler(streamService StreamService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		user := GetAuthorizedUser(c)
 		lastId := c.QueryParam("lastId")

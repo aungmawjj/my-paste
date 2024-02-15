@@ -59,7 +59,7 @@ func TestLoginCallbackHandler(t *testing.T) {
 		mockV := NewMockIdTokenValidator(t)
 		mockV.EXPECT().Validate(c.Request().Context(), "cred").Return(payload, nil)
 
-		err := MakeLoginCallbackHandler(mockV, jwtSignKey)(c)
+		err := LoginCallbackHandler(mockV, jwtSignKey)(c)
 
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusSeeOther, rec.Result().StatusCode)
@@ -75,7 +75,7 @@ func TestLoginCallbackHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := echo.New().NewContext(req, rec)
 
-		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
+		err := LoginCallbackHandler(nil, jwtSignKey)(c)
 
 		require.NoError(t, err)
 		assertFailedResponse(t, rec.Result())
@@ -87,7 +87,7 @@ func TestLoginCallbackHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := echo.New().NewContext(req, rec)
 
-		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
+		err := LoginCallbackHandler(nil, jwtSignKey)(c)
 
 		require.NoError(t, err)
 		assertFailedResponse(t, rec.Result())
@@ -99,7 +99,7 @@ func TestLoginCallbackHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := echo.New().NewContext(req, rec)
 
-		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
+		err := LoginCallbackHandler(nil, jwtSignKey)(c)
 
 		require.NoError(t, err)
 		assertFailedResponse(t, rec.Result())
@@ -112,7 +112,7 @@ func TestLoginCallbackHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := echo.New().NewContext(req, rec)
 
-		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
+		err := LoginCallbackHandler(nil, jwtSignKey)(c)
 
 		require.NoError(t, err)
 		assertFailedResponse(t, rec.Result())
@@ -125,7 +125,7 @@ func TestLoginCallbackHandler(t *testing.T) {
 		rec := httptest.NewRecorder()
 		c := echo.New().NewContext(req, rec)
 
-		err := MakeLoginCallbackHandler(nil, jwtSignKey)(c)
+		err := LoginCallbackHandler(nil, jwtSignKey)(c)
 
 		require.NoError(t, err)
 		assertFailedResponse(t, rec.Result())
@@ -141,7 +141,7 @@ func TestLoginCallbackHandler(t *testing.T) {
 		mockV := NewMockIdTokenValidator(t)
 		mockV.EXPECT().Validate(c.Request().Context(), "cred").Return(nil, errors.New("invalid idtoken"))
 
-		err := MakeLoginCallbackHandler(mockV, jwtSignKey)(c)
+		err := LoginCallbackHandler(mockV, jwtSignKey)(c)
 
 		require.NoError(t, err)
 		assertFailedResponse(t, rec.Result())
@@ -156,7 +156,7 @@ func TestAuthenticateHandler(t *testing.T) {
 	c := echo.New().NewContext(req, rec)
 	c.Set("user", generateToken(User{"name", "email"}))
 
-	err := MakeAuthenticateHandler(jwtSignKey)(c)
+	err := AuthenticateHandler(jwtSignKey)(c)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, rec.Result().StatusCode)
@@ -168,7 +168,7 @@ func TestMakeLogoutHandler(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := echo.New().NewContext(req, rec)
 
-	err := MakeLogoutHandler()(c)
+	err := LogoutHandler()(c)
 
 	require.NoError(t, err)
 	tokenCookie := getResponseTokenCookie(rec.Result())

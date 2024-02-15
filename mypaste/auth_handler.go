@@ -54,7 +54,7 @@ func GetAuthorizedUser(c echo.Context) User {
 	return token.Claims.(*TokenClaims).User
 }
 
-func MakeLoginPageHandler(gClientId, callbackUri string) echo.HandlerFunc {
+func LoginPageHandler(gClientId, callbackUri string) echo.HandlerFunc {
 	loginTemplateData := struct {
 		GoogleClientId   string
 		LoginCallbackUri string
@@ -64,7 +64,7 @@ func MakeLoginPageHandler(gClientId, callbackUri string) echo.HandlerFunc {
 	}
 }
 
-func MakeLoginCallbackHandler(validator IdTokenValidator, jwtSignKey string) echo.HandlerFunc {
+func LoginCallbackHandler(validator IdTokenValidator, jwtSignKey string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		user, err := validateGoogleSignin(c, validator)
 		if err != nil {
@@ -150,7 +150,7 @@ func expiredTokenCookie() *http.Cookie {
 	}
 }
 
-func MakeAuthenticateHandler(jwtSignKey string) echo.HandlerFunc {
+func AuthenticateHandler(jwtSignKey string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		user := GetAuthorizedUser(c)
 		token := generateToken(user)
@@ -163,7 +163,7 @@ func MakeAuthenticateHandler(jwtSignKey string) echo.HandlerFunc {
 	}
 }
 
-func MakeLogoutHandler() echo.HandlerFunc {
+func LogoutHandler() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		c.SetCookie(expiredTokenCookie())
 		return c.NoContent(http.StatusOK)

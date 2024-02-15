@@ -50,17 +50,17 @@ func Start() {
 	e.Renderer = NewRenderer()
 	e.HideBanner = true
 
-	e.GET("/login", MakeLoginPageHandler(gClientId, loginCallbackUri))
-	e.POST(loginCallbackEndpoint, MakeLoginCallbackHandler(NewIdTokenValidator(gClientId), jwtSignKey))
+	e.GET("/login", LoginPageHandler(gClientId, loginCallbackUri))
+	e.POST(loginCallbackEndpoint, LoginCallbackHandler(NewIdTokenValidator(gClientId), jwtSignKey))
 
 	authmw := NewAuthMiddleware(jwtSignKey)
 	api := e.Group("/api", authmw)
 
-	api.POST("/auth/authenticate", MakeAuthenticateHandler(jwtSignKey))
-	api.POST("/auth/logout", MakeLogoutHandler())
+	api.POST("/auth/authenticate", AuthenticateHandler(jwtSignKey))
+	api.POST("/auth/logout", LogoutHandler())
 
-	api.POST("/event", MakeAddEventHandler(streamService))
-	api.GET("/event", MakeReadEventsHandler(streamService))
+	api.POST("/event", AddEventHandler(streamService))
+	api.GET("/event", ReadEventsHandler(streamService))
 
 	api.Any("/*", ApiNotFoundHandler)
 
