@@ -11,11 +11,11 @@ func AddEventHandler(streamService StreamService) echo.HandlerFunc {
 		user := GetAuthorizedUser(c)
 		event := new(Event)
 		if err := c.Bind(event); err != nil {
-			return err
+			return c.String(http.StatusBadRequest, "Invalid request body, "+err.Error())
 		}
 		id, err := streamService.Add(c.Request().Context(), user.Email, event.Payload)
 		if err != nil {
-			return err
+			return c.String(http.StatusInternalServerError, err.Error())
 		}
 		event.Id = id
 		return c.JSON(http.StatusOK, event)
@@ -28,7 +28,7 @@ func ReadEventsHandler(streamService StreamService) echo.HandlerFunc {
 		lastId := c.QueryParam("lastId")
 		events, err := streamService.Read(c.Request().Context(), user.Email, lastId)
 		if err != nil {
-			return err
+			return c.String(http.StatusInternalServerError, err.Error())
 		}
 		return c.JSON(http.StatusOK, events)
 	}
