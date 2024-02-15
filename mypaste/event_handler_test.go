@@ -2,6 +2,7 @@ package mypaste
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -32,7 +33,7 @@ func TestReadEventHandlerTimeout(t *testing.T) {
 		start := time.Now()
 		err := ReadEventsHandler(svc)(c)
 		assert.GreaterOrEqual(t, time.Since(start), readBlock, "should block for at least read block")
-		require.Error(t, err)
+		require.NoError(t, err)
 	}()
 
 	select {
@@ -40,6 +41,12 @@ func TestReadEventHandlerTimeout(t *testing.T) {
 		assert.FailNow(t, "should get response after timeout")
 	case <-gotResp:
 	}
+
+	assert.Equal(t, http.StatusOK, rec.Result().StatusCode)
+	var events []Event
+	err := json.NewDecoder(rec.Body).Decode(&events)
+	require.NoError(t, err)
+	assert.Empty(t, events)
 }
 
 func newTestStreamService(t *testing.T, readBlock time.Duration) StreamService {

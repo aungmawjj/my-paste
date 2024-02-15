@@ -3,6 +3,7 @@ package mypaste
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -59,10 +60,13 @@ func (s *redisStream) Read(ctx context.Context, stream, lastId string) ([]Event,
 		Count:   s.config.ReadCount,
 		Block:   s.config.ReadBlock,
 	}).Result()
-	if err != nil {
-		return nil, err
+	if err == nil {
+		return s.toEvents(res[0].Messages), nil
 	}
-	return s.toEvents(res[0].Messages), nil
+	if strings.Contains(strings.ToLower(err.Error()), "redis: nil") {
+		return s.toEvents(nil), nil
+	}
+	return nil, err
 }
 
 func (s *redisStream) toEvents(messages []redis.XMessage) []Event {

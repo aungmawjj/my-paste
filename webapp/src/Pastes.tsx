@@ -3,24 +3,28 @@ import axios from "axios";
 import { Box, Hide, Icon, IconButton, Text } from "@chakra-ui/react";
 import { MdAdd, MdContentCopy } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import { StreamEvent } from "./model";
 
-type Event = {
-  Id: string;
-  Payload: string;
-  Timestamp: number;
-};
+async function sleep(ms: number) {
+  return new Promise<void>((res) => {
+    setTimeout(() => {
+      res();
+    }, ms);
+  });
+}
 
 function Pastes() {
-  const [pastes, setPastes] = useState<Event[]>([]);
+  const [pastes, setPastes] = useState<StreamEvent[]>([]);
   const navigate = useNavigate();
 
   const fetchEvents = useCallback((ctrl: AbortController, lastId: string) => {
     return axios
-      .get<Event[]>("/api/event", {
+      .get<StreamEvent[]>("/api/event", {
         signal: ctrl.signal,
         params: { lastId: lastId },
       })
       .then((resp) => {
+        if (resp.data.length == 0) return lastId;
         setPastes((old) => [...resp.data.reverse(), ...old]);
         return resp.data[0].Id;
       });
@@ -30,12 +34,17 @@ function Pastes() {
     const ctrl = new AbortController();
     let loop = true;
     let lastId = "";
+    let errDelay = 5000;
     const fetchLoop = async () => {
       while (loop) {
         try {
           lastId = await fetchEvents(ctrl, lastId);
+          errDelay = 5000;
         } catch (err) {
           console.error("failed to fatch events: ", err);
+          console.error(`next attampt in: ${Math.round(errDelay/1000)}s`, );
+          await sleep(errDelay);
+          errDelay *= 2;
         }
       }
     };
