@@ -1,9 +1,10 @@
-import { useCallback, useState, useEffect } from "react";
-import axios from "axios";
+import { useCallback, useEffect } from "react";
 import { Box, Hide, Icon, IconButton, Text } from "@chakra-ui/react";
 import { MdAdd, MdContentCopy } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { StreamEvent } from "./model";
+import { atom, useRecoilCallback, useRecoilState } from "recoil";
+import axios from "axios";
 
 async function sleep(ms: number) {
   return new Promise<void>((res) => {
@@ -13,47 +14,60 @@ async function sleep(ms: number) {
   });
 }
 
+const streamEventAtom = atom<{ streamEvents: StreamEvent[]; lastId: string }>({
+  key: "StreamEventState",
+  default: { streamEvents: [], lastId: "" },
+});
+
 function Pastes() {
-  const [pastes, setPastes] = useState<StreamEvent[]>([]);
+  const [{ streamEvents }, setStreamEventState] =
+    useRecoilState(streamEventAtom);
   const navigate = useNavigate();
 
-  const fetchEvents = useCallback((ctrl: AbortController, lastId: string) => {
-    return axios
-      .get<StreamEvent[]>("/api/event", {
-        signal: ctrl.signal,
-        params: { lastId: lastId },
-      })
-      .then((resp) => {
-        if (resp.data.length == 0) return lastId;
-        setPastes((old) => [...resp.data.reverse(), ...old]);
-        return resp.data[0].Id;
-      });
-  }, []);
+  const fetchStreamEvents = useRecoilCallback(
+    ({ snapshot }) =>
+      async (signal: AbortSignal) => {
+        const { lastId } = await snapshot.getPromise(streamEventAtom);
+        const resp = await axios.get<StreamEvent[]>("/api/event", {
+          signal: signal,
+          params: { lastId: lastId },
+        });
+        if (resp.data.length == 0) return;
+        resp.data.reverse();
+        setStreamEventState((prev) => ({
+          streamEvents: [...resp.data, ...prev.streamEvents],
+          lastId: resp.data[0].Id,
+        }));
+      },
+    []
+  );
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    let loop = true;
-    let lastId = "";
-    let errDelay = 5000;
-    const fetchLoop = async () => {
-      while (loop) {
+  const pollStreamEvents = useCallback(
+    async (signal: AbortSignal) => {
+      let errDelay = 5000;
+      while (!signal.aborted) {
         try {
-          lastId = await fetchEvents(ctrl, lastId);
+          await fetchStreamEvents(signal);
           errDelay = 5000;
         } catch (err) {
-          console.error("failed to fatch events: ", err);
-          console.error(`next attampt in: ${Math.round(errDelay/1000)}s`, );
+          console.warn("failed to fatch events: ", err);
+          if (signal.aborted) break;
+          console.debug(`next attampt in: ${Math.round(errDelay / 1000)}s`);
           await sleep(errDelay);
           errDelay *= 2;
         }
       }
-    };
-    fetchLoop().catch(console.error);
+    },
+    [fetchStreamEvents]
+  );
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    pollStreamEvents(ctrl.signal).catch(console.error);
     return () => {
-      loop = false;
       ctrl.abort();
     };
-  }, [fetchEvents]);
+  }, [pollStreamEvents]);
 
   const onCopy = useCallback((text: string) => {
     navigator.clipboard.writeText(text).catch(console.error);
@@ -79,34 +93,34 @@ function Pastes() {
       </Hide>
 
       <Box pb={20}>
-        {pastes.map((p) => (
+        {streamEvents.map((e) => (
           <Box
             position="relative"
-            key={p.Id}
+            key={e.Id}
             py={6}
             px={8}
-            my={4}
-            border="1px"
-            borderColor="gray.200"
+            my={3}
+            bg="white"
             borderRadius="24px"
           >
             <Text fontSize="xs" color="gray">
-              {new Date(p.Timestamp * 1000).toLocaleString()}
+              {new Date(e.Timestamp * 1000).toLocaleString()}
             </Text>
 
             <Text pt={2} fontSize="sm">
-              {p.Payload}
+              {e.Payload}
             </Text>
 
             <IconButton
               position="absolute"
               top={1}
               right={4}
+              size="md"
               aria-label="copy"
               variant="ghost"
-              size="md"
-              onClick={() => onCopy(p.Payload)}
-              icon={<Icon color="gray.900" as={MdContentCopy} boxSize={6} />}
+              colorScheme="brand"
+              onClick={() => onCopy(e.Payload)}
+              icon={<Icon as={MdContentCopy} boxSize={6} />}
             />
           </Box>
         ))}
