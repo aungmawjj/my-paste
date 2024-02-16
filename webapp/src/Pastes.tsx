@@ -42,8 +42,8 @@ function Pastes() {
           lastId = await fetchEvents(ctrl, lastId);
           errDelay = 5000;
         } catch (err) {
-          console.error("failed to fatch events: ", err);
-          console.error(`next attampt in: ${Math.round(errDelay / 1000)}s`);
+          console.log("failed to fatch events: ", err);
+          console.log(`next attampt in: ${Math.round(errDelay / 1000)}s`);
           await sleep(errDelay);
           errDelay *= 2;
         }

@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { useEffect, useState } from "react";
-import Loading from "./Loading";
+import LoadingPage from "./LoadingPage";
 import { User } from "./model";
 import TopBar from "./TopBar";
 import { Box, useConst } from "@chakra-ui/react";
@@ -30,7 +30,7 @@ function App() {
   const topBarHeight = useConst("72px");
   const px = useConst({ base: 4, md: 20, lg: 40, xl: 60, "2xl": 80 });
 
-  if (!user) return <Loading />;
+  if (!user) return <LoadingPage />;
   return (
     <>
       <TopBar user={user} height={topBarHeight} px={px} />

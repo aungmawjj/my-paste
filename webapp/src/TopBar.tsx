@@ -56,6 +56,7 @@ function TopBar({ user, height, px }: Readonly<Props>) {
       borderBottom="1px solid"
       borderBottomColor="gray.100"
       px={px}
+      data-testid="top-bar"
     >
       <Flex height="100%" alignItems="center" gap={6}>
         <Image src="/LogoMyPaste.svg" />

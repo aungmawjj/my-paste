@@ -8,6 +8,7 @@ function Loading() {
         justifyContent: "center",
         gap: "2rem",
       }}
+      data-testid="loading-page"
     >
       Loading...
     </div>
