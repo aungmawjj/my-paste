@@ -22,7 +22,7 @@ function App() {
           return;
         }
         // might be offline, for now just leave as loading
-        console.log("authenticate failed:", err);
+        console.warn("failed to authenticate:", err);
       });
     return () => ctrl.abort();
   }, []);

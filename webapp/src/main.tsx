@@ -5,6 +5,11 @@ import { ChakraProvider, extendTheme } from "@chakra-ui/react";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import Pastes from "./Pastes.tsx";
 import AddPaste from "./AddPaste.tsx";
+import { RecoilRoot, RecoilEnv } from "recoil";
+
+if (import.meta.env.MODE == "development") {
+  RecoilEnv.RECOIL_DUPLICATE_ATOM_KEY_CHECKING_ENABLED = false;
+}
 
 const router = createBrowserRouter([
   {
@@ -36,7 +41,9 @@ const theme = extendTheme({
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ChakraProvider theme={theme}>
-      <RouterProvider router={router} />
+      <RecoilRoot>
+        <RouterProvider router={router} />
+      </RecoilRoot>
     </ChakraProvider>
   </React.StrictMode>
 );

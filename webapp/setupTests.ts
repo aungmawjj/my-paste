@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import "@testing-library/jest-dom";
 import "jest-location-mock";
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: jest.fn().mockImplementation((query) => ({
+  value: jest.fn().mockImplementation((query: unknown) => ({
     matches: false,
     media: query,
     onchange: null,

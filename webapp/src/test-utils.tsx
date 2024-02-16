@@ -3,11 +3,14 @@ import React, { ReactElement } from "react";
 import { render, RenderOptions } from "@testing-library/react";
 import { ChakraProvider } from "@chakra-ui/react";
 import { BrowserRouter } from "react-router-dom";
+import { RecoilRoot } from "recoil";
 
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
   return (
     <ChakraProvider>
-      <BrowserRouter>{children}</BrowserRouter>
+      <RecoilRoot>
+        <BrowserRouter>{children}</BrowserRouter>
+      </RecoilRoot>
     </ChakraProvider>
   );
 };

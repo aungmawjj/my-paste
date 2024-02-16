@@ -1,8 +1,9 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Box, Hide, Icon, IconButton, Text } from "@chakra-ui/react";
 import { MdAdd, MdContentCopy } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { StreamEvent } from "./model";
+import { atom, useRecoilCallback, useRecoilState } from "recoil";
 import axios from "axios";
 
 async function sleep(ms: number) {
@@ -13,52 +14,60 @@ async function sleep(ms: number) {
   });
 }
 
+const streamEventAtom = atom<{ streamEvents: StreamEvent[]; lastId: string }>({
+  key: "StreamEventState",
+  default: { streamEvents: [], lastId: "" },
+});
+
 function Pastes() {
-  const [pastes, setPastes] = useState<StreamEvent[]>([]);
+  const [{ streamEvents }, setStreamEventState] =
+    useRecoilState(streamEventAtom);
   const navigate = useNavigate();
 
-  const fetchEvents = useCallback(
-    async (signal: AbortSignal, lastId: string) => {
-      const resp = await axios.get<StreamEvent[]>("/api/event", {
-        signal: signal,
-        params: { lastId: lastId },
-      });
-      if (resp.data.length == 0) return lastId;
-      resp.data.reverse();
-      setPastes((old) => [...resp.data, ...old]);
-      return resp.data[0].Id;
-    },
+  const fetchStreamEvents = useRecoilCallback(
+    ({ snapshot }) =>
+      async (signal: AbortSignal) => {
+        const { lastId } = await snapshot.getPromise(streamEventAtom);
+        const resp = await axios.get<StreamEvent[]>("/api/event", {
+          signal: signal,
+          params: { lastId: lastId },
+        });
+        if (resp.data.length == 0) return;
+        resp.data.reverse();
+        setStreamEventState((prev) => ({
+          streamEvents: [...resp.data, ...prev.streamEvents],
+          lastId: resp.data[0].Id,
+        }));
+      },
     []
   );
 
-  const fetchLoop = useCallback(
+  const pollStreamEvents = useCallback(
     async (signal: AbortSignal) => {
-      let lastId = "";
       let errDelay = 5000;
-
       while (!signal.aborted) {
         try {
-          lastId = await fetchEvents(signal, lastId);
+          await fetchStreamEvents(signal);
           errDelay = 5000;
         } catch (err) {
-          console.log("failed to fatch events: ", err);
+          console.warn("failed to fatch events: ", err);
           if (signal.aborted) break;
-          console.log(`next attampt in: ${Math.round(errDelay / 1000)}s`);
+          console.debug(`next attampt in: ${Math.round(errDelay / 1000)}s`);
           await sleep(errDelay);
           errDelay *= 2;
         }
       }
     },
-    [fetchEvents]
+    [fetchStreamEvents]
   );
 
   useEffect(() => {
     const ctrl = new AbortController();
-    fetchLoop(ctrl.signal).catch(console.error);
+    pollStreamEvents(ctrl.signal).catch(console.error);
     return () => {
       ctrl.abort();
     };
-  }, [fetchLoop]);
+  }, [pollStreamEvents]);
 
   const onCopy = useCallback((text: string) => {
     navigator.clipboard.writeText(text).catch(console.error);
@@ -84,10 +93,10 @@ function Pastes() {
       </Hide>
 
       <Box pb={20}>
-        {pastes.map((p) => (
+        {streamEvents.map((e) => (
           <Box
             position="relative"
-            key={p.Id}
+            key={e.Id}
             py={6}
             px={8}
             my={4}
@@ -96,11 +105,11 @@ function Pastes() {
             borderRadius="24px"
           >
             <Text fontSize="xs" color="gray">
-              {new Date(p.Timestamp * 1000).toLocaleString()}
+              {new Date(e.Timestamp * 1000).toLocaleString()}
             </Text>
 
             <Text pt={2} fontSize="sm">
-              {p.Payload}
+              {e.Payload}
             </Text>
 
             <IconButton
@@ -110,7 +119,7 @@ function Pastes() {
               aria-label="copy"
               variant="ghost"
               size="md"
-              onClick={() => onCopy(p.Payload)}
+              onClick={() => onCopy(e.Payload)}
               icon={<Icon color="gray.900" as={MdContentCopy} boxSize={6} />}
             />
           </Box>
