@@ -25,7 +25,8 @@ function Pastes() {
       })
       .then((resp) => {
         if (resp.data.length == 0) return lastId;
-        setPastes((old) => [...resp.data.reverse(), ...old]);
+        resp.data.reverse();
+        setPastes((old) => [...resp.data, ...old]);
         return resp.data[0].Id;
       });
   }, []);
@@ -42,7 +43,7 @@ function Pastes() {
           errDelay = 5000;
         } catch (err) {
           console.error("failed to fatch events: ", err);
-          console.error(`next attampt in: ${Math.round(errDelay/1000)}s`, );
+          console.error(`next attampt in: ${Math.round(errDelay / 1000)}s`);
           await sleep(errDelay);
           errDelay *= 2;
         }

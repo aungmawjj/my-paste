@@ -18,11 +18,11 @@ function App() {
       })
       .catch((err: Error | AxiosError) => {
         if (axios.isAxiosError(err) && err.response?.status == 401) {
-          window.location.replace("/login");
+          window.location.assign("/login");
           return;
         }
-        console.error("authenticate failed:", err);
         // might be offline, for now just leave as loading
+        console.log("authenticate failed:", err);
       });
     return () => ctrl.abort();
   }, []);
