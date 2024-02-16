@@ -1,9 +1,9 @@
 import { useCallback, useState, useEffect } from "react";
-import axios from "axios";
 import { Box, Hide, Icon, IconButton, Text } from "@chakra-ui/react";
 import { MdAdd, MdContentCopy } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { StreamEvent } from "./model";
+import axios from "axios";
 
 async function sleep(ms: number) {
   return new Promise<void>((res) => {
@@ -17,44 +17,48 @@ function Pastes() {
   const [pastes, setPastes] = useState<StreamEvent[]>([]);
   const navigate = useNavigate();
 
-  const fetchEvents = useCallback((ctrl: AbortController, lastId: string) => {
-    return axios
-      .get<StreamEvent[]>("/api/event", {
-        signal: ctrl.signal,
+  const fetchEvents = useCallback(
+    async (signal: AbortSignal, lastId: string) => {
+      const resp = await axios.get<StreamEvent[]>("/api/event", {
+        signal: signal,
         params: { lastId: lastId },
-      })
-      .then((resp) => {
-        if (resp.data.length == 0) return lastId;
-        resp.data.reverse();
-        setPastes((old) => [...resp.data, ...old]);
-        return resp.data[0].Id;
       });
-  }, []);
+      if (resp.data.length == 0) return lastId;
+      resp.data.reverse();
+      setPastes((old) => [...resp.data, ...old]);
+      return resp.data[0].Id;
+    },
+    []
+  );
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    let loop = true;
-    let lastId = "";
-    let errDelay = 5000;
-    const fetchLoop = async () => {
-      while (loop) {
+  const fetchLoop = useCallback(
+    async (signal: AbortSignal) => {
+      let lastId = "";
+      let errDelay = 5000;
+
+      while (!signal.aborted) {
         try {
-          lastId = await fetchEvents(ctrl, lastId);
+          lastId = await fetchEvents(signal, lastId);
           errDelay = 5000;
         } catch (err) {
           console.log("failed to fatch events: ", err);
+          if (signal.aborted) break;
           console.log(`next attampt in: ${Math.round(errDelay / 1000)}s`);
           await sleep(errDelay);
           errDelay *= 2;
         }
       }
-    };
-    fetchLoop().catch(console.error);
+    },
+    [fetchEvents]
+  );
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetchLoop(ctrl.signal).catch(console.error);
     return () => {
-      loop = false;
       ctrl.abort();
     };
-  }, [fetchEvents]);
+  }, [fetchLoop]);
 
   const onCopy = useCallback((text: string) => {
     navigator.clipboard.writeText(text).catch(console.error);

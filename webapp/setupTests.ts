@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import "@testing-library/jest-dom";
 import "jest-location-mock";
 

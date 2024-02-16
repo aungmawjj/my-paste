@@ -1,7 +1,7 @@
 import App from "./App";
 import { act, render, screen } from "./test-utils";
 import { setupServer } from "msw/node";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, delay, http } from "msw";
 import { User } from "./model";
 
 const server = setupServer(
@@ -15,8 +15,9 @@ afterAll(() => server.close());
 afterEach(() => server.resetHandlers());
 
 test("authenticate success", async () => {
-  await act(() => {
+  await act(async () => {
     render(<App />);
+    await delay(1);
   });
   expect(window.location).not.toBeAt("/login");
   expect(screen.getByTestId("top-bar")).toBeInTheDocument();
@@ -28,8 +29,9 @@ test("redirect to login page", async () => {
       return HttpResponse.json({}, { status: 401 });
     })
   );
-  await act(() => {
+  await act(async () => {
     render(<App />);
+    await delay(1);
   });
   expect(window.location).toBeAt("/login");
 });
@@ -40,8 +42,9 @@ test("offline", async () => {
       return HttpResponse.error();
     })
   );
-  await act(() => {
+  await act(async () => {
     render(<App />);
+    await delay(1);
   });
   expect(window.location).not.toBeAt("/login");
   expect(screen.getByTestId("loading-page")).toBeInTheDocument();

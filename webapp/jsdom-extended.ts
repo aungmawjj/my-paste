@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import JSDOMEnvironment from "jest-environment-jsdom";
 
 class JSDOMEnvironmentExtended extends JSDOMEnvironment {
