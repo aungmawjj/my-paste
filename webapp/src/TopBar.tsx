@@ -44,19 +44,15 @@ function TopBar({ user, height, px }: Readonly<Props>) {
 
   return (
     <Box
+      data-testid="top-bar"
+      px={px}
       height={height}
       width="100%"
       position="fixed"
       top={0}
       zIndex={1}
-      bg="rgba(255, 255, 255, 0.7)"
-      backdropFilter="auto"
-      backdropBlur="10px"
+      bg="white"
       boxShadow="sm"
-      borderBottom="1px solid"
-      borderBottomColor="gray.100"
-      px={px}
-      data-testid="top-bar"
     >
       <Flex height="100%" alignItems="center" gap={6}>
         <Image src="/LogoMyPaste.svg" />

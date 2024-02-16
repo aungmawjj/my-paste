@@ -99,9 +99,8 @@ function Pastes() {
             key={e.Id}
             py={6}
             px={8}
-            my={4}
-            border="1px"
-            borderColor="gray.200"
+            my={3}
+            bg="white"
             borderRadius="24px"
           >
             <Text fontSize="xs" color="gray">
@@ -116,11 +115,12 @@ function Pastes() {
               position="absolute"
               top={1}
               right={4}
+              size="md"
               aria-label="copy"
               variant="ghost"
-              size="md"
+              colorScheme="brand"
               onClick={() => onCopy(e.Payload)}
-              icon={<Icon color="gray.900" as={MdContentCopy} boxSize={6} />}
+              icon={<Icon as={MdContentCopy} boxSize={6} />}
             />
           </Box>
         ))}

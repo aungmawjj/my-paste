@@ -8,7 +8,7 @@ function AddPaste() {
   const [payload, setPayload] = useState("");
   const navigate = useNavigate();
 
-  const onSend = useCallback(
+  const onSubmit = useCallback(
     (payload: string) => {
       axios
         .post("/api/event", { Payload: payload })
@@ -22,11 +22,12 @@ function AddPaste() {
   );
 
   return (
-    <Box pt={{ md: 6 }} pb={6}>
-      <Flex py={4}>
+    <Box pt={{ md: 10 }} pb={6}>
+      <Flex py={{base: 4, md: 6}}>
         <Button
           leftIcon={<Icon as={IoArrowBack} boxSize={6} />}
           variant="link"
+          colorScheme="brand"
           onClick={() => navigate(-1)}
         >
           Back
@@ -35,19 +36,20 @@ function AddPaste() {
         <Button
           size="md"
           colorScheme="brand"
-          onClick={() => onSend(payload)}
+          onClick={() => onSubmit(payload)}
           leftIcon={<Icon as={IoSend} boxSize={6} />}
           isDisabled={payload == ""}
         >
-          Send
+          Submit
         </Button>
       </Flex>
 
       <Textarea
         autoFocus
         size="md"
-        rows={5}
+        rows={10}
         placeholder="Enter Text"
+        bg="white"
         onChange={(e) => setPayload(e.target.value)}
       />
     </Box>
