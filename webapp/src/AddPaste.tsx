@@ -10,6 +10,7 @@ function AddPaste() {
 
   const onSubmit = useCallback(
     (payload: string) => {
+      if (payload.length == 0) return;
       axios
         .post("/api/event", { Payload: payload })
         .then(() => {
@@ -23,7 +24,7 @@ function AddPaste() {
 
   return (
     <Box pt={{ md: 10 }} pb={6}>
-      <Flex py={{base: 4, md: 6}}>
+      <Flex py={{ base: 4, md: 6 }}>
         <Button
           leftIcon={<Icon as={IoArrowBack} boxSize={6} />}
           variant="link"
@@ -38,7 +39,6 @@ function AddPaste() {
           colorScheme="brand"
           onClick={() => onSubmit(payload)}
           leftIcon={<Icon as={IoSend} boxSize={6} />}
-          isDisabled={payload == ""}
         >
           Submit
         </Button>
@@ -49,8 +49,9 @@ function AddPaste() {
         size="md"
         rows={10}
         placeholder="Enter Text"
-        bg="white"
         onChange={(e) => setPayload(e.target.value)}
+        bg="white"
+        _dark={{ bg: "gray.800" }}
       />
     </Box>
   );

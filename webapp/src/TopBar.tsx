@@ -18,9 +18,11 @@ import {
   PopoverBody,
   Box,
   BoxProps,
-  Hide,
+  useColorMode,
+  IconButton,
+  Show,
 } from "@chakra-ui/react";
-import { MdAdd, MdLogout } from "react-icons/md";
+import { MdAdd, MdDarkMode, MdLightMode, MdLogout } from "react-icons/md";
 import { useLocation, useNavigate } from "react-router-dom";
 
 type Props = {
@@ -41,6 +43,8 @@ function TopBar({ user, height, px }: Readonly<Props>) {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { colorMode, toggleColorMode } = useColorMode();
+  const darkMode = colorMode == "dark";
 
   return (
     <Box
@@ -51,14 +55,17 @@ function TopBar({ user, height, px }: Readonly<Props>) {
       position="fixed"
       top={0}
       zIndex={1}
-      bg="white"
       boxShadow="sm"
+      bg="white"
+      _dark={{
+        bg: "gray.900",
+      }}
     >
       <Flex height="100%" alignItems="center" gap={6}>
-        <Image src="/LogoMyPaste.svg" />
+        <Image src={darkMode ? "/DarkLogoMyPaste.svg" : "/LogoMyPaste.svg"} />
         <Spacer />
-        {!location.pathname.includes("add-paste") && (
-          <Hide below="md">
+        {location.pathname == "/" && (
+          <Show above="md">
             <Button
               colorScheme="brand"
               leftIcon={<Icon as={MdAdd} boxSize={6} />}
@@ -66,11 +73,24 @@ function TopBar({ user, height, px }: Readonly<Props>) {
             >
               Add
             </Button>
-          </Hide>
+          </Show>
         )}
+        <IconButton
+          size="md"
+          aria-label="toggle color mode"
+          variant="ghost"
+          onClick={toggleColorMode}
+          icon={<Icon as={darkMode ? MdLightMode : MdDarkMode} boxSize={6} />}
+        />
         <Popover autoFocus={false}>
           <PopoverTrigger>
-            <Avatar as={Button} size="md" name={user.Name} />
+            <Avatar
+              bg="teal.300"
+              _dark={{ bg: "teal.200" }}
+              as={Button}
+              size="md"
+              name={user.Name}
+            />
           </PopoverTrigger>
           <PopoverContent mx={2}>
             <PopoverArrow />
