@@ -57,7 +57,7 @@ function TopBar({ user, height, px }: Readonly<Props>) {
       <Flex height="100%" alignItems="center" gap={6}>
         <Image src="/LogoMyPaste.svg" />
         <Spacer />
-        {!location.pathname.includes("add-paste") && (
+        {location.pathname == "/" && (
           <Hide below="md">
             <Button
               colorScheme="brand"

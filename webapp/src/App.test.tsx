@@ -4,10 +4,11 @@ import { setupServer } from "msw/node";
 import { HttpResponse, delay, http } from "msw";
 import { User } from "./model";
 
+const fakeUser: User = { Name: "john", Email: "j@g.co" };
+
 const server = setupServer(
-  http.post("/api/auth/authenticate", () => {
-    return HttpResponse.json<User>({ Name: "john", Email: "j@g.co" });
-  })
+  http.post("/api/auth/authenticate", () => HttpResponse.json(fakeUser)),
+  http.get("/api/event", () => HttpResponse.error())
 );
 
 beforeAll(() => server.listen());
@@ -21,7 +22,9 @@ test("authenticate success", async () => {
   });
   expect(window.location).not.toBeAt("/login");
   expect(screen.getByTestId("top-bar")).toBeInTheDocument();
-});
+  expect(screen.getByText(fakeUser.Name)).toBeInTheDocument();
+  expect(screen.getByText(fakeUser.Email)).toBeInTheDocument();
+}, 1000);
 
 test("redirect to login page", async () => {
   server.use(

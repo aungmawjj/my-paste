@@ -23,7 +23,7 @@ function App() {
           return;
         }
         // might be offline, for now just leave as loading
-        console.warn("failed to authenticate:", err);
+        console.info("failed to authenticate:", err);
       });
   }, []);
 

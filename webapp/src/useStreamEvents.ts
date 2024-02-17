@@ -3,21 +3,21 @@ import { StreamEvent } from "./model";
 import { atom, useRecoilCallback, useRecoilState } from "recoil";
 import axios from "axios";
 
-const sleep = async (ms: number) => new Promise((r) => setTimeout(r, ms));
+const delay = async (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const streamEventsAtom = atom<StreamEvent[]>({
+const streamEventsState = atom<StreamEvent[]>({
   key: "StreamEventState",
   default: [],
 });
 
 function useStreamEvents() {
-  const [streamEvents, setStreamEvents] = useRecoilState(streamEventsAtom);
+  const [streamEvents, setStreamEvents] = useRecoilState(streamEventsState);
   const lastId = useRef("");
 
   const resetLastId = useRecoilCallback(
     ({ snapshot }) =>
       async () => {
-        const s = await snapshot.getPromise(streamEventsAtom);
+        const s = await snapshot.getPromise(streamEventsState);
         lastId.current = s.length > 0 ? s[0].Id : "";
       },
     [lastId]
@@ -43,10 +43,11 @@ function useStreamEvents() {
       while (!signal.aborted) {
         try {
           await fetchStreamEvents(signal);
+          await delay(10);
         } catch (err) {
-          console.warn("failed to fatch events: ", err);
+          console.info("failed to fatch events: ", err);
           if (signal.aborted) break;
-          await sleep(5000);
+          await delay(5000);
         }
       }
     },
@@ -60,3 +61,4 @@ function useStreamEvents() {
 }
 
 export default useStreamEvents;
+export { streamEventsState };
