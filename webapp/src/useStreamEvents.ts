@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
 import { StreamEvent } from "./model";
 import { atom, useRecoilCallback, useRecoilState } from "recoil";
 import axios from "axios";
@@ -12,37 +12,36 @@ const streamEventsState = atom<StreamEvent[]>({
 
 function useStreamEvents() {
   const [streamEvents, setStreamEvents] = useRecoilState(streamEventsState);
-  const lastId = useRef("");
 
-  const resetLastId = useRecoilCallback(
+  const getLastId = useRecoilCallback(
     ({ snapshot }) =>
       async () => {
         const s = await snapshot.getPromise(streamEventsState);
-        lastId.current = s.length > 0 ? s[0].Id : "";
+        return s.length > 0 ? s[0].Id : "";
       },
-    [lastId]
+    []
   );
 
   const fetchStreamEvents = useCallback(
-    async (signal: AbortSignal) => {
+    async (signal: AbortSignal, lastId: string) => {
       const resp = await axios.get<StreamEvent[]>("/api/event", {
         signal: signal,
-        params: { lastId: lastId.current },
+        params: { lastId },
       });
-      if (resp.data.length == 0) return;
+      if (resp.data.length == 0) return lastId;
       resp.data.reverse();
       setStreamEvents((prev) => [...resp.data, ...prev]);
-      lastId.current = resp.data[0].Id;
+      return resp.data[0].Id;
     },
-    [lastId, setStreamEvents]
+    [setStreamEvents]
   );
 
   const pollStreamEvents = useCallback(
     async (signal: AbortSignal) => {
-      await resetLastId();
+      let lastId = await getLastId();
       while (!signal.aborted) {
         try {
-          await fetchStreamEvents(signal);
+          lastId = await fetchStreamEvents(signal, lastId);
           await delay(10);
         } catch (err) {
           console.info("failed to fatch events: ", err);
@@ -51,7 +50,7 @@ function useStreamEvents() {
         }
       }
     },
-    [resetLastId, fetchStreamEvents]
+    [getLastId, fetchStreamEvents]
   );
 
   return {

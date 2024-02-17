@@ -1,7 +1,12 @@
-import React from "react";
+import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
-import { ChakraProvider, extendTheme } from "@chakra-ui/react";
+import {
+  ChakraProvider,
+  ColorModeScript,
+  ThemeConfig,
+  extendTheme,
+} from "@chakra-ui/react";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import PasteList from "./PasteList.tsx";
 import AddPaste from "./AddPaste.tsx";
@@ -28,22 +33,46 @@ const router = createBrowserRouter([
   },
 ]);
 
+const themeConfig: ThemeConfig = {
+  initialColorMode: "system",
+  useSystemColorMode: true,
+};
+
 const theme = extendTheme({
+  config: themeConfig,
+  styles: {
+    global: {
+      body: {
+        bg: "gray.100",
+        _dark: {
+          bg: "gray.900",
+        },
+      },
+    },
+  },
   colors: {
     brand: {
-      100: "#A0AEC0",
+      50: "#F7FAFC",
+      100: "#EDF2F7",
+      200: "#E2E8F0",
+      300: "#CBD5E0",
+      400: "#A0AEC0",
       500: "#1A202C",
+      600: "#1A202C",
+      700: "#171923",
+      800: "#171923",
       900: "#171923",
     },
   },
 });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
+  <StrictMode>
+    <ColorModeScript initialColorMode={themeConfig.initialColorMode} />
     <ChakraProvider theme={theme}>
       <RecoilRoot>
         <RouterProvider router={router} />
       </RecoilRoot>
     </ChakraProvider>
-  </React.StrictMode>
+  </StrictMode>
 );

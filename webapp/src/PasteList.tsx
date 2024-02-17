@@ -1,4 +1,4 @@
-import { Box, Hide, Icon, IconButton } from "@chakra-ui/react";
+import { Box, Show, Icon, IconButton } from "@chakra-ui/react";
 import { MdAdd } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import useStreamEvents from "./useStreamEvents";
@@ -10,7 +10,7 @@ function PasteList() {
 
   return (
     <>
-      <Hide above="md">
+      <Show below="md">
         <IconButton
           position="fixed"
           bottom={6}
@@ -25,7 +25,7 @@ function PasteList() {
           icon={<Icon as={MdAdd} boxSize={8} />}
           onClick={() => navigate("/add-paste")}
         />
-      </Hide>
+      </Show>
 
       <Box pb={20} data-testid="paste-list">
         {streamEvents.map((e) => (

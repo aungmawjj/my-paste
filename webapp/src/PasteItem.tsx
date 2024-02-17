@@ -10,9 +10,9 @@ import { MdContentCopy } from "react-icons/md";
 import { StreamEvent } from "./model";
 import { BsClipboardCheck } from "react-icons/bs";
 
-interface Props {
+type Props = {
   paste: StreamEvent;
-}
+};
 
 function PasteItem({ paste }: Readonly<Props>) {
   const { onCopy, hasCopied } = useClipboard(paste.Payload);
@@ -23,10 +23,13 @@ function PasteItem({ paste }: Readonly<Props>) {
       py={6}
       px={8}
       my={3}
-      bg="white"
       borderRadius="24px"
+      bg="white"
+      _dark={{
+        bg: "gray.800",
+      }}
     >
-      <Text fontSize="xs" color="gray">
+      <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }}>
         {new Date(paste.Timestamp * 1000).toLocaleString()}
       </Text>
 
@@ -41,7 +44,12 @@ function PasteItem({ paste }: Readonly<Props>) {
           variant="ghost"
           colorScheme={hasCopied ? "green" : "brand"}
           onClick={onCopy}
-          icon={<Icon as={hasCopied ? BsClipboardCheck : MdContentCopy} boxSize={6} />}
+          icon={
+            <Icon
+              as={hasCopied ? BsClipboardCheck : MdContentCopy}
+              boxSize={6}
+            />
+          }
         />
       </Flex>
     </Box>
