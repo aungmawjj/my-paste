@@ -3,9 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import LoadingPage from "./LoadingPage";
 import { User } from "./model";
 import TopBar from "./TopBar";
-import { Box, useColorMode, useConst } from "@chakra-ui/react";
+import { Box, useConst } from "@chakra-ui/react";
 import { Outlet } from "react-router-dom";
-import { Helmet } from "react-helmet";
 import useStreamEvents from "./useStreamEvents";
 
 function App() {
@@ -43,20 +42,10 @@ function App() {
 
   const topBarHeight = useConst("72px");
   const px = useConst({ base: 4, md: 20, lg: 40, xl: 60, "2xl": 80 });
-  const { colorMode } = useColorMode();
-  const darkMode = colorMode == "dark";
-  const metaThemeColor = darkMode ? "black" : "white";
-
   if (!user) return <LoadingPage />;
+
   return (
     <>
-      <Helmet>
-        <meta name="theme-color" content={metaThemeColor} />
-        <meta
-          name="apple-mobile-web-app-status-bar-style"
-          content={metaThemeColor}
-        />
-      </Helmet>
       <TopBar user={user} height={topBarHeight} px={px} />
       <Box pt={topBarHeight} px={px}>
         <Outlet />

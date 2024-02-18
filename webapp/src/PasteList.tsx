@@ -18,8 +18,8 @@ function PasteList() {
           zIndex={2}
           aria-label="Add"
           colorScheme="brand"
-          width="56px"
-          height="56px"
+          width="72px"
+          height="72px"
           borderRadius="16px"
           boxShadow="xl"
           icon={<Icon as={MdAdd} boxSize={8} />}

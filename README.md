@@ -37,6 +37,6 @@ mockery
 - [x] Redis stream
 - [x] Event API (Add, Read)
 - [x] Webapp use event API
-- [ ] Webapp improve UI design
-- [ ] Webapp store event local
+- [x] Webapp improve UI design
 - [ ] Webapp e2e encrypt and key sharing between clients
+- [ ] Webapp store event local
