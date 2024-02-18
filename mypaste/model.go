@@ -9,4 +9,5 @@ type Event struct {
 	Id        string
 	Payload   string
 	Timestamp int64
+	Kind      string
 }

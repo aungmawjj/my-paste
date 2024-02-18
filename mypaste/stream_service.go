@@ -12,11 +12,14 @@ import (
 const (
 	eventPayloadKey   = "payload"
 	eventTimestampKey = "timestamp"
+	eventKindKey      = "kind"
 )
 
 type StreamService interface {
 	Add(ctx context.Context, stream string, event Event) (Event, error)
 	Read(ctx context.Context, stream, lastId string) ([]Event, error)
+	Delete(ctx context.Context, stream string, ids ...string) (int64, error)
+	Reset(ctx context.Context, stream string) (int64, error)
 }
 
 type RedisStreamConfig struct {
@@ -46,6 +49,7 @@ func (s *redisStream) Add(ctx context.Context, stream string, event Event) (Even
 		Values: map[string]interface{}{
 			eventPayloadKey:   event.Payload,
 			eventTimestampKey: event.Timestamp,
+			eventKindKey:      event.Kind,
 		},
 		MaxLen: s.config.MaxLen,
 		Approx: true,
@@ -83,13 +87,23 @@ func (s *redisStream) toEvents(messages []redis.XMessage) []Event {
 			timestamp, _ = strconv.ParseInt(tstr, 10, 64)
 		}
 		payload, _ := m.Values[eventPayloadKey].(string)
+		kind, _ := m.Values[eventKindKey].(string)
 		events = append(events, Event{
 			Id:        m.ID,
 			Payload:   payload,
 			Timestamp: timestamp,
+			Kind:      kind,
 		})
 	}
 	return events
+}
+
+func (s *redisStream) Delete(ctx context.Context, stream string, ids ...string) (int64, error) {
+	return s.client.XDel(ctx, s.streamId(stream), ids...).Result()
+}
+
+func (s *redisStream) Reset(ctx context.Context, stream string) (int64, error) {
+	return s.client.Del(ctx, s.streamId(stream)).Result()
 }
 
 func (s *redisStream) streamId(stream string) string {

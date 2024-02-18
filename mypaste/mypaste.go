@@ -41,6 +41,8 @@ func Start() {
 		ReadCount: 100,
 		ReadBlock: 5 * time.Minute,
 	})
+	_ = streamService
+	_ = webappBundleDir
 
 	e := echo.New()
 	e.Use(echomw.Recover())
@@ -56,11 +58,19 @@ func Start() {
 	authmw := NewAuthMiddleware(jwtSignKey)
 	api := e.Group("/api", authmw)
 
-	api.POST("/auth/authenticate", AuthenticateHandler(jwtSignKey))
-	api.POST("/auth/logout", LogoutHandler())
+	{
+		g := api.Group("/auth")
+		g.POST("/authenticate", AuthenticateHandler(jwtSignKey))
+		g.POST("/logout", LogoutHandler())
+	}
 
-	api.POST("/event", AddEventHandler(streamService))
-	api.GET("/event", ReadEventsHandler(streamService))
+	{
+		g := api.Group("/event")
+		g.POST("", AddEventHandler(streamService))
+		g.GET("", ReadEventsHandler(streamService))
+		g.DELETE("", DeleteEventsHandler(streamService))
+		g.DELETE("/reset", ResetEventsHandler(streamService))
+	}
 
 	api.Any("/*", ApiNotFoundHandler)
 
@@ -96,6 +106,7 @@ func NewWebappServerMiddleware(bundleDir string) echo.MiddlewareFunc {
 }
 
 func ApiNotFoundHandler(c echo.Context) error {
+	c.Logger().Error("Api Not Found, " + c.Request().URL.Path)
 	return c.NoContent(http.StatusNotFound)
 }
 
