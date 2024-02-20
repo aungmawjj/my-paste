@@ -13,21 +13,30 @@ import {
 import { MdContentCopy, MdDelete, MdMoreVert } from "react-icons/md";
 import { StreamEvent } from "./model";
 import { BsClipboardCheck } from "react-icons/bs";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import useStreamEvents from "./useStreamEvents";
 
 type Props = {
   paste: StreamEvent;
 };
 
+const foldAt = 300;
+
 function PasteItem({ paste }: Readonly<Props>) {
   const { onCopy, hasCopied } = useClipboard(paste.Payload);
   const { deleteStreamEvents } = useStreamEvents();
+  const [folded, setFolded] = useState(true);
+
+  const isFoldable = paste.Payload.length > foldAt;
+  const payload =
+    isFoldable && folded
+      ? paste.Payload.slice(0, foldAt) + " ..."
+      : paste.Payload;
 
   const onDelete = useCallback(() => {
     deleteStreamEvents(paste.Id)
       .then(() => {
-        console.log("deleted paste, id:", paste.Id);
+        console.debug("deleted paste, id:", paste.Id);
       })
       .catch(console.warn);
   }, [deleteStreamEvents, paste]);
@@ -48,9 +57,20 @@ function PasteItem({ paste }: Readonly<Props>) {
         {timeText(paste)}
       </Text>
 
-      <Text pt={2} fontSize="sm">
-        {paste.Payload}
-      </Text>
+      <Box
+        _hover={{ cursor: "pointer" }}
+        onClick={() => setFolded((prev) => !prev)}
+      >
+        <Text pt={2} fontSize="md" fontWeight="thin" whiteSpace="pre-wrap">
+          {payload}
+        </Text>
+
+        {isFoldable && (
+          <Text fontSize="sm" color="gray.500" _dark={{ color: "gray.400" }}>
+            {folded ? "show more" : "show less"}
+          </Text>
+        )}
+      </Box>
 
       <Flex position="absolute" top={1} right={4} gap={2}>
         <IconButton
