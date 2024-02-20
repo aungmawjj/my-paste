@@ -9,12 +9,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const (
-	eventPayloadKey   = "payload"
-	eventTimestampKey = "timestamp"
-	eventKindKey      = "kind"
-)
-
 type StreamService interface {
 	Add(ctx context.Context, stream string, event Event) (Event, error)
 	Read(ctx context.Context, stream, lastId string) ([]Event, error)
@@ -46,11 +40,7 @@ func (s *redisStream) Add(ctx context.Context, stream string, event Event) (Even
 	event.Timestamp = time.Now().Unix()
 	id, err := s.client.XAdd(ctx, &redis.XAddArgs{
 		Stream: s.streamId(stream),
-		Values: map[string]interface{}{
-			eventPayloadKey:   event.Payload,
-			eventTimestampKey: event.Timestamp,
-			eventKindKey:      event.Kind,
-		},
+		Values: s.eventValues(event),
 		MaxLen: s.config.MaxLen,
 		Approx: true,
 	}).Result()
@@ -82,20 +72,32 @@ func (s *redisStream) Read(ctx context.Context, stream, lastId string) ([]Event,
 func (s *redisStream) toEvents(messages []redis.XMessage) []Event {
 	events := make([]Event, 0, len(messages))
 	for _, m := range messages {
-		var timestamp int64
-		if tstr, ok := m.Values[eventTimestampKey].(string); ok {
-			timestamp, _ = strconv.ParseInt(tstr, 10, 64)
-		}
-		payload, _ := m.Values[eventPayloadKey].(string)
-		kind, _ := m.Values[eventKindKey].(string)
-		events = append(events, Event{
-			Id:        m.ID,
-			Payload:   payload,
-			Timestamp: timestamp,
-			Kind:      kind,
-		})
+		events = append(events, s.toEvent(m))
 	}
 	return events
+}
+
+func (s *redisStream) eventValues(event Event) map[string]interface{} {
+	return map[string]interface{}{
+		"Payload":     event.Payload,
+		"Kind":        event.Kind,
+		"Timestamp":   strconv.FormatInt(event.Timestamp, 10),
+		"IsSensitive": strconv.FormatBool(event.IsSensitive),
+	}
+}
+
+func (s *redisStream) toEvent(message redis.XMessage) Event {
+	var event Event
+	event.Id = message.ID
+	event.Payload, _ = message.Values["Payload"].(string)
+	event.Kind, _ = message.Values["Kind"].(string)
+	if tmp, ok := message.Values["Timestamp"].(string); ok {
+		event.Timestamp, _ = strconv.ParseInt(tmp, 10, 64)
+	}
+	if tmp, ok := message.Values["IsSensitive"].(string); ok {
+		event.IsSensitive, _ = strconv.ParseBool(tmp)
+	}
+	return event
 }
 
 func (s *redisStream) Delete(ctx context.Context, stream string, ids ...string) (int64, error) {

@@ -17,6 +17,7 @@ COPY --from=NodeBuilder /opt/webapp/dist /opt/webapp
 
 ENV WEBAPP_BUNDLE_DIR=/opt/webapp
 ENV SERVE_ADDR=:8080
+ENV REQ_BODY_LIMIT=5K
 EXPOSE 8080
 
 ENTRYPOINT [ "/opt/mypaste" ]

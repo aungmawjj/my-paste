@@ -18,22 +18,27 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+type config struct {
+	GoogleClientId   string
+	JwtSignKey       string
+	WebappBundleDir  string
+	LoginCallbackUri string
+	ServeAddr        string
+	EnableAutoTLS    string
+	TlsCacheDir      string
+	TlsDomain        string
+	RedisUrl         string
+	ReqBodyLimit     string
+}
+
 func Start() {
-	gClientId := getEnvVerbose("GOOGLE_CLIENT_ID", false)
-	jwtSignKey := getEnvVerbose("JWT_SIGN_KEY", true)
-	webappBundleDir := getEnvVerbose("WEBAPP_BUNDLE_DIR", false)
-	loginCallbackUri := getEnvVerbose("LOGIN_CALLBACK_URI", false)
-	serveAddr := getEnvVerbose("SERVE_ADDR", false)
-	enableAutoTLS := getEnvVerbose("ENABLE_AUTO_TLS", false)
-	tlsCacheDir := getEnvVerbose("TLS_CACHE_DIR", false)
-	tlsDomain := getEnvVerbose("TLS_DOMAIN", false)
-	redisUrl := getEnvVerbose("REDIS_URL", false)
 
-	loginCallbackEndpoint := parseLoginCallbackEndpoint(loginCallbackUri)
+	cfg := loadConfig()
+	loginCallbackEndpoint := parseLoginCallbackEndpoint(cfg.LoginCallbackUri)
 
-	redisOpts, err := redis.ParseURL(redisUrl)
+	redisOpts, err := redis.ParseURL(cfg.RedisUrl)
 	if err != nil {
-		panic(fmt.Errorf("failed to parse redis url, %v, %w", redisUrl, err))
+		panic(fmt.Errorf("failed to parse redis url, %v, %w", cfg.RedisUrl, err))
 	}
 	redisClient := redis.NewClient(redisOpts)
 	streamService := NewRedisStreamService(redisClient, RedisStreamConfig{
@@ -41,26 +46,24 @@ func Start() {
 		ReadCount: 100,
 		ReadBlock: 5 * time.Minute,
 	})
-	_ = streamService
-	_ = webappBundleDir
 
 	e := echo.New()
 	e.Use(echomw.Recover())
 	e.Use(echomw.Logger())
 	e.Use(echomw.Gzip())
-	e.Use(NewWebappServerMiddleware(webappBundleDir))
+	e.Use(NewWebappServerMiddleware(cfg.WebappBundleDir))
 	e.Renderer = NewRenderer()
 	e.HideBanner = true
 
-	e.GET("/login", LoginPageHandler(gClientId, loginCallbackUri))
-	e.POST(loginCallbackEndpoint, LoginCallbackHandler(NewIdTokenValidator(gClientId), jwtSignKey))
+	e.GET("/login", LoginPageHandler(cfg.GoogleClientId, cfg.LoginCallbackUri))
+	e.POST(loginCallbackEndpoint, LoginCallbackHandler(NewIdTokenValidator(cfg.GoogleClientId), cfg.JwtSignKey))
 
-	authmw := NewAuthMiddleware(jwtSignKey)
+	authmw := NewAuthMiddleware(cfg.JwtSignKey)
 	api := e.Group("/api", authmw)
 
 	{
 		g := api.Group("/auth")
-		g.POST("/authenticate", AuthenticateHandler(jwtSignKey))
+		g.POST("/authenticate", AuthenticateHandler(cfg.JwtSignKey))
 		g.POST("/logout", LogoutHandler())
 	}
 
@@ -73,15 +76,31 @@ func Start() {
 	}
 
 	api.Any("/*", ApiNotFoundHandler)
+	e.Use(echomw.BodyLimit(cfg.ReqBodyLimit))
 
-	if enableAutoTLS != "1" {
-		e.Logger.Fatal(e.Start(serveAddr))
+	if cfg.EnableAutoTLS != "1" {
+		e.Logger.Fatal(e.Start(cfg.ServeAddr))
 		return
 	}
-	e.AutoTLSManager.Cache = autocert.DirCache(tlsCacheDir)
-	e.AutoTLSManager.HostPolicy = autocert.HostWhitelist(tlsDomain)
+	e.AutoTLSManager.Cache = autocert.DirCache(cfg.TlsCacheDir)
+	e.AutoTLSManager.HostPolicy = autocert.HostWhitelist(cfg.TlsDomain)
 	e.Pre(echomw.HTTPSRedirect())
-	e.Logger.Fatal(e.StartAutoTLS(serveAddr))
+	e.Logger.Fatal(e.StartAutoTLS(cfg.ServeAddr))
+}
+
+func loadConfig() config {
+	return config{
+		GoogleClientId:   getEnvVerbose("GOOGLE_CLIENT_ID", false),
+		JwtSignKey:       getEnvVerbose("JWT_SIGN_KEY", true),
+		WebappBundleDir:  getEnvVerbose("WEBAPP_BUNDLE_DIR", false),
+		LoginCallbackUri: getEnvVerbose("LOGIN_CALLBACK_URI", false),
+		ServeAddr:        getEnvVerbose("SERVE_ADDR", false),
+		EnableAutoTLS:    getEnvVerbose("ENABLE_AUTO_TLS", false),
+		TlsCacheDir:      getEnvVerbose("TLS_CACHE_DIR", false),
+		TlsDomain:        getEnvVerbose("TLS_DOMAIN", false),
+		RedisUrl:         getEnvVerbose("REDIS_URL", false),
+		ReqBodyLimit:     getEnvVerbose("REQ_BODY_LIMIT", false),
+	}
 }
 
 func parseLoginCallbackEndpoint(loginCallbackUri string) string {
