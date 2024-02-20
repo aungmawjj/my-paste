@@ -45,7 +45,7 @@ function PasteItem({ paste }: Readonly<Props>) {
       }}
     >
       <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }}>
-        {new Date(paste.Timestamp * 1000).toLocaleString()}
+        {timeText(paste)}
       </Text>
 
       <Text pt={2} fontSize="sm">
@@ -87,6 +87,19 @@ function PasteItem({ paste }: Readonly<Props>) {
       </Flex>
     </Box>
   );
+}
+
+function timeText(paste: StreamEvent): string {
+  const now = new Date();
+  const date = new Date(paste.Timestamp * 1000);
+  const minutesAgo = Math.floor((now.getTime() - date.getTime()) / 60000);
+  const hoursAgo = Math.floor(minutesAgo / 60);
+  const daysAgo = Math.floor(hoursAgo / 24);
+  if (minutesAgo < 1) return "just now";
+  if (hoursAgo < 1) return `${minutesAgo} min${minutesAgo > 1 ? "s" : ""} ago`;
+  if (daysAgo < 1) return `${hoursAgo} hour${hoursAgo > 1 ? "s" : ""} ago`;
+  if (daysAgo < 10) return `${daysAgo} day${daysAgo > 1 ? "s" : ""} ago`;
+  return date.toDateString();
 }
 
 export default PasteItem;
