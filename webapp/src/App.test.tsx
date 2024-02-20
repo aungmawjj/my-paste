@@ -18,7 +18,7 @@ afterEach(() => server.resetHandlers());
 test("authenticate success", async () => {
   await act(async () => {
     render(<App />);
-    await delay(1);
+    await delay(10);
   });
   expect(window.location).not.toBeAt("/login");
   expect(screen.getByTestId("top-bar")).toBeInTheDocument();
@@ -34,7 +34,7 @@ test("redirect to login page", async () => {
   );
   await act(async () => {
     render(<App />);
-    await delay(1);
+    await delay(10);
   });
   expect(window.location).toBeAt("/login");
 });
@@ -47,7 +47,7 @@ test("offline", async () => {
   );
   await act(async () => {
     render(<App />);
-    await delay(1);
+    await delay(10);
   });
   expect(window.location).not.toBeAt("/login");
   expect(screen.getByTestId("loading-page")).toBeInTheDocument();

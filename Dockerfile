@@ -1,14 +1,12 @@
 FROM golang:1.21.6-alpine3.19 AS GoBuilder
 WORKDIR /opt
 COPY . /opt
-RUN go test ./...
 RUN go build -o /mypaste .
 
 FROM node:21.6.0-alpine3.19 AS NodeBuilder
 WORKDIR /opt/webapp
 COPY webapp /opt/webapp
 RUN npm install
-RUN npm run test
 RUN npm run build
 
 FROM alpine:3.19

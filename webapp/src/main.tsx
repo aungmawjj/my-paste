@@ -42,6 +42,9 @@ const theme = extendTheme({
   config: themeConfig,
   styles: {
     global: {
+      "*": {
+        WebkitTapHighlightColor: "transparent",
+      },
       body: {
         bg: "gray.100",
         _dark: {
