@@ -15,6 +15,7 @@ import { StreamEvent } from "./model";
 import { BsClipboardCheck } from "react-icons/bs";
 import { useCallback, useState } from "react";
 import useStreamEvents from "./useStreamEvents";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 type Props = {
   paste: StreamEvent;
@@ -26,12 +27,12 @@ function PasteItem({ paste }: Readonly<Props>) {
   const { onCopy, hasCopied } = useClipboard(paste.Payload);
   const { deleteStreamEvents } = useStreamEvents();
   const [folded, setFolded] = useState(true);
+  const [hidden, setHidden] = useState(true);
 
-  const isFoldable = paste.Payload.length > foldAt;
-  const payload =
-    isFoldable && folded
-      ? paste.Payload.slice(0, foldAt) + " ..."
-      : paste.Payload;
+  const foldable = paste.Payload.length > foldAt;
+  let payloadText = paste.Payload;
+  if (foldable && folded) payloadText = paste.Payload.slice(0, foldAt) + " ...";
+  if (paste.IsSensitive && hidden) payloadText = "* * * * *";
 
   const onDelete = useCallback(() => {
     deleteStreamEvents(paste.Id)
@@ -62,10 +63,10 @@ function PasteItem({ paste }: Readonly<Props>) {
         onClick={() => setFolded((prev) => !prev)}
       >
         <Text pt={2} fontSize="md" fontWeight="thin" whiteSpace="pre-wrap">
-          {payload}
+          {payloadText}
         </Text>
 
-        {isFoldable && (
+        {foldable && (
           <Text fontSize="sm" color="gray.500" _dark={{ color: "gray.400" }}>
             {folded ? "show more" : "show less"}
           </Text>
@@ -73,6 +74,18 @@ function PasteItem({ paste }: Readonly<Props>) {
       </Box>
 
       <Flex position="absolute" top={1} right={4} gap={2}>
+        {paste.IsSensitive && (
+          <IconButton
+            size="md"
+            aria-label="hide / show"
+            variant="ghost"
+            colorScheme="brand"
+            onClick={() => setHidden((prev) => !prev)}
+            icon={
+              <Icon as={hidden ? FaEyeSlash : FaEye} boxSize={6} />
+            }
+          />
+        )}
         <IconButton
           size="md"
           aria-label="copy"
