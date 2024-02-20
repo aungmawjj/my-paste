@@ -43,7 +43,7 @@ function useStreamEvents() {
       while (!signal.aborted) {
         try {
           lastId = await fetchStreamEvents(signal, lastId);
-          await delay(1);
+          await delay(10);
         } catch (err) {
           console.info("failed to fatch events: ", err);
           if (signal.aborted) break;
