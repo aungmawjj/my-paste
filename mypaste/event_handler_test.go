@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
@@ -82,7 +83,8 @@ func TestEventHandlers(t *testing.T) {
 		svc := newTestStreamService(t, 1*time.Millisecond)
 		e1 := addEventT(t, svc, "email", "hello1")
 		e2 := addEventT(t, svc, "email", "hello2")
-		deleteEventsT(t, svc, "email", e1.Id)
+		e3 := addEventT(t, svc, "email", "hello3")
+		deleteEventsT(t, svc, "email", e1.Id, e3.Id)
 		events := readEventsT(t, svc, "email", "")
 		assert.Equal(t, 1, len(events))
 		assert.Equal(t, e2, events[0])
@@ -130,7 +132,8 @@ func addEventT(t *testing.T, svc StreamService, email string, payload string) Ev
 }
 
 func readEventsT(t *testing.T, svc StreamService, email string, lastId string) []Event {
-	req := httptest.NewRequest(http.MethodGet, "/?lastId="+lastId, nil)
+	query := url.Values{"lastId": {lastId}}
+	req := httptest.NewRequest(http.MethodGet, "/?"+query.Encode(), nil)
 	rec := httptest.NewRecorder()
 	c := echo.New().NewContext(req, rec)
 	c.Set("user", generateToken(User{"name", email}))
@@ -146,9 +149,8 @@ func readEventsT(t *testing.T, svc StreamService, email string, lastId string) [
 }
 
 func deleteEventsT(t *testing.T, svc StreamService, email string, ids ...string) {
-	body, _ := json.Marshal(ids)
-	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
-	req.Header.Add("Content-Type", "application/json")
+	query := url.Values{"id": ids}
+	req := httptest.NewRequest(http.MethodDelete, "/?"+query.Encode(), nil)
 	rec := httptest.NewRecorder()
 	c := echo.New().NewContext(req, rec)
 	c.Set("user", generateToken(User{"name", email}))
@@ -160,7 +162,7 @@ func deleteEventsT(t *testing.T, svc StreamService, email string, ids ...string)
 }
 
 func resetEventsT(t *testing.T, svc StreamService, email string) {
-	req := httptest.NewRequest(http.MethodPost, "/", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/", nil)
 	rec := httptest.NewRecorder()
 	c := echo.New().NewContext(req, rec)
 	c.Set("user", generateToken(User{"name", email}))

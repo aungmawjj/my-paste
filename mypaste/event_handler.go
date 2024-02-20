@@ -35,13 +35,16 @@ func ReadEventsHandler(streamService StreamService) echo.HandlerFunc {
 }
 
 func DeleteEventsHandler(streamService StreamService) echo.HandlerFunc {
+	type query struct {
+		Ids []string `query:"id"`
+	}
 	return func(c echo.Context) error {
 		user := GetAuthorizedUser(c)
-		var ids []string
-		if err := c.Bind(&ids); err != nil {
+		var q query
+		if err := c.Bind(&q); err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
-		count, err := streamService.Delete(c.Request().Context(), user.Email, ids...)
+		count, err := streamService.Delete(c.Request().Context(), user.Email, q.Ids...)
 		if err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}

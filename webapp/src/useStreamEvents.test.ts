@@ -9,8 +9,8 @@ import _ from "lodash";
 
 const now = () => new Date().getTime() / 1000;
 const fakeEvents: StreamEvent[] = [
-  { Id: "1", Payload: "p1", Timestamp: now() },
-  { Id: "2", Payload: "p2", Timestamp: now() },
+  { Id: "1", Payload: "p1", Timestamp: now(), Kind: "", IsSensitive: false },
+  { Id: "2", Payload: "p2", Timestamp: now(), Kind: "", IsSensitive: false },
 ];
 
 const server = setupServer(

@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { StreamEvent } from "./model";
 import { atom, useRecoilCallback, useRecoilState } from "recoil";
 import axios from "axios";
+import _ from "lodash";
 
 const delay = async (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -53,9 +54,23 @@ function useStreamEvents() {
     [getLastId, fetchStreamEvents]
   );
 
+  const deleteStreamEvents = useCallback(
+    (...ids: string[]) => {
+      const params = new URLSearchParams();
+      ids.forEach((id) => params.append("id", id));
+      return axios.delete("/api/event", { params: params }).then(() => {
+        setStreamEvents((prev) =>
+          _.filter(prev, (e) => !_.includes(ids, e.Id))
+        );
+      });
+    },
+    [setStreamEvents]
+  );
+
   return {
     streamEvents,
     pollStreamEvents,
+    deleteStreamEvents,
   };
 }
 
