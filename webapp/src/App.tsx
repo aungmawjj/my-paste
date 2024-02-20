@@ -45,12 +45,12 @@ function App() {
   if (!user) return <LoadingPage />;
 
   return (
-    <>
+    <Box overflowX="hidden">
       <TopBar user={user} height={topBarHeight} px={px} />
       <Box pt={topBarHeight} px={px}>
         <Outlet />
       </Box>
-    </>
+    </Box>
   );
 }
 

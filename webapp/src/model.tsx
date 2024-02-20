@@ -7,6 +7,6 @@ export type StreamEvent = {
   Id: string;
   Payload: string;
   Timestamp: number;
-  Kind: string;
-  IsSensitive: boolean;
+  Kind?: string;
+  IsSensitive?: boolean;
 };

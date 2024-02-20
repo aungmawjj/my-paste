@@ -27,7 +27,7 @@ function PasteList() {
         />
       </Show>
 
-      <Box pb={20} data-testid="paste-list">
+      <Box pb={28} data-testid="paste-list">
         {streamEvents.map((e) => (
           <PasteItem paste={e} key={e.Id} />
         ))}

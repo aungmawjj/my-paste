@@ -22,7 +22,7 @@ import {
   IconButton,
   Show,
 } from "@chakra-ui/react";
-import { MdAdd, MdDarkMode, MdLightMode, MdLogout } from "react-icons/md";
+import { MdAdd, MdLightMode, MdLogout, MdNightsStay } from "react-icons/md";
 import { useLocation, useNavigate } from "react-router-dom";
 
 type Props = {
@@ -68,6 +68,7 @@ function TopBar({ user, height, px }: Readonly<Props>) {
           <Show above="md">
             <Button
               colorScheme="brand"
+              borderRadius="16px"
               leftIcon={<Icon as={MdAdd} boxSize={6} />}
               onClick={() => navigate("/add-paste")}
             >
@@ -80,7 +81,7 @@ function TopBar({ user, height, px }: Readonly<Props>) {
           aria-label="toggle color mode"
           variant="ghost"
           onClick={toggleColorMode}
-          icon={<Icon as={darkMode ? MdLightMode : MdDarkMode} boxSize={6} />}
+          icon={<Icon as={darkMode ? MdLightMode : MdNightsStay} boxSize={6} />}
         />
         <Popover autoFocus={false}>
           <PopoverTrigger>
