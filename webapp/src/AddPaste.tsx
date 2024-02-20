@@ -17,7 +17,7 @@ function AddPaste() {
           payload = "";
           navigate(-1);
         })
-        .catch(console.error);
+        .catch(console.warn);
     },
     [navigate]
   );

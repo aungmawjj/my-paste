@@ -12,8 +12,8 @@ test("empty", () => {
 test("with stream events", () => {
   const now = () => new Date().getTime() / 1000;
   const fakeEvents: StreamEvent[] = [
-    { Id: "1", Payload: "p1", Timestamp: now() },
-    { Id: "2", Payload: "p2", Timestamp: now() },
+    { Id: "1", Payload: "p1", Timestamp: now(), Kind: "", IsSensitive: false},
+    { Id: "2", Payload: "p2", Timestamp: now(), Kind: "", IsSensitive: false },
   ];
   render(
     <RecoilRoot initializeState={(s) => s.set(streamEventsState, fakeEvents)}>

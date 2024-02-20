@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
@@ -78,6 +79,26 @@ func TestEventHandlers(t *testing.T) {
 		assert.Equal(t, e2, ee2[0])
 	})
 
+	t.Run("delete", func(t *testing.T) {
+		svc := newTestStreamService(t, 1*time.Millisecond)
+		e1 := addEventT(t, svc, "email", "hello1")
+		e2 := addEventT(t, svc, "email", "hello2")
+		e3 := addEventT(t, svc, "email", "hello3")
+		deleteEventsT(t, svc, "email", e1.Id, e3.Id)
+		events := readEventsT(t, svc, "email", "")
+		assert.Equal(t, 1, len(events))
+		assert.Equal(t, e2, events[0])
+	})
+
+	t.Run("reset", func(t *testing.T) {
+		svc := newTestStreamService(t, 1*time.Millisecond)
+		addEventT(t, svc, "email", "hello1")
+		addEventT(t, svc, "email", "hello2")
+		resetEventsT(t, svc, "email")
+		events := readEventsT(t, svc, "email", "")
+		assert.Equal(t, 0, len(events))
+	})
+
 }
 
 func newTestStreamService(t *testing.T, readBlock time.Duration) StreamService {
@@ -111,7 +132,8 @@ func addEventT(t *testing.T, svc StreamService, email string, payload string) Ev
 }
 
 func readEventsT(t *testing.T, svc StreamService, email string, lastId string) []Event {
-	req := httptest.NewRequest(http.MethodGet, "/?lastId="+lastId, nil)
+	query := url.Values{"lastId": {lastId}}
+	req := httptest.NewRequest(http.MethodGet, "/?"+query.Encode(), nil)
 	rec := httptest.NewRecorder()
 	c := echo.New().NewContext(req, rec)
 	c.Set("user", generateToken(User{"name", email}))
@@ -124,4 +146,29 @@ func readEventsT(t *testing.T, svc StreamService, email string, lastId string) [
 	err = json.NewDecoder(rec.Body).Decode(&events)
 	require.NoError(t, err)
 	return events
+}
+
+func deleteEventsT(t *testing.T, svc StreamService, email string, ids ...string) {
+	query := url.Values{"id": ids}
+	req := httptest.NewRequest(http.MethodDelete, "/?"+query.Encode(), nil)
+	rec := httptest.NewRecorder()
+	c := echo.New().NewContext(req, rec)
+	c.Set("user", generateToken(User{"name", email}))
+
+	err := DeleteEventsHandler(svc)(c)
+
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, rec.Result().StatusCode)
+}
+
+func resetEventsT(t *testing.T, svc StreamService, email string) {
+	req := httptest.NewRequest(http.MethodDelete, "/", nil)
+	rec := httptest.NewRecorder()
+	c := echo.New().NewContext(req, rec)
+	c.Set("user", generateToken(User{"name", email}))
+
+	err := ResetEventsHandler(svc)(c)
+
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, rec.Result().StatusCode)
 }

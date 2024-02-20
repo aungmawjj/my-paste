@@ -13,13 +13,13 @@ function PasteList() {
       <Show below="md">
         <IconButton
           position="fixed"
-          bottom={6}
-          right={6}
+          bottom={8}
+          right={8}
           zIndex={2}
           aria-label="Add"
           colorScheme="brand"
-          width="56px"
-          height="56px"
+          width="64px"
+          height="64px"
           borderRadius="16px"
           boxShadow="xl"
           icon={<Icon as={MdAdd} boxSize={8} />}
