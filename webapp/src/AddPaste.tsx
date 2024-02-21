@@ -7,29 +7,28 @@ import {
   Spacer,
   Textarea,
 } from "@chakra-ui/react";
-import axios from "axios";
 import { useCallback, useState } from "react";
 import { IoArrowBack, IoSend } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import useStreamEvents from "./useStreamEvents";
 
 function AddPaste() {
   const [payload, setPayload] = useState("");
   const [sensitive, setSensitive] = useState(false);
-
+  const { addStreamEvents } = useStreamEvents();
   const navigate = useNavigate();
 
   const onSubmit = useCallback(
     (payload: string, sensitive: boolean) => {
       if (payload.length == 0) return;
-      axios
-        .post("/api/event", { Payload: payload, IsSensitive: sensitive })
+      addStreamEvents({ Payload: payload, IsSensitive: sensitive })
         .then(() => {
           payload = "";
           navigate(-1);
         })
         .catch(console.warn);
     },
-    [navigate]
+    [addStreamEvents, navigate]
   );
 
   return (

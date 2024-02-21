@@ -1,42 +1,26 @@
-import axios from "axios";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import LoadingPage from "./LoadingPage";
 import { User } from "./model";
 import TopBar from "./TopBar";
 import { Box, useConst } from "@chakra-ui/react";
 import { Outlet } from "react-router-dom";
 import useStreamEvents from "./useStreamEvents";
+import backend from "./backend";
 
 function App() {
   const [user, setUser] = useState<User>();
   const { pollStreamEvents } = useStreamEvents();
 
-  const authenticate = useCallback((signal: AbortSignal) => {
-    axios
-      .post<User>("/api/auth/authenticate", null, { signal: signal })
-      .then((resp) => {
-        setUser(resp.data);
-      })
-      .catch((err: Error) => {
-        if (axios.isAxiosError(err) && err.response?.status == 401) {
-          window.location.assign("/login");
-          return;
-        }
-        // might be offline, for now just leave as loading
-        console.info("failed to authenticate:", err);
-      });
-  }, []);
-
   useEffect(() => {
     const ctrl = new AbortController();
-    authenticate(ctrl.signal);
+    backend.authenticate(ctrl.signal).then(setUser).catch(console.warn);
     return () => ctrl.abort();
-  }, [authenticate]);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
     const ctrl = new AbortController();
-    pollStreamEvents(ctrl.signal).catch(console.error);
+    pollStreamEvents(ctrl.signal).catch(console.warn);
     return () => ctrl.abort();
   }, [user, pollStreamEvents]);
 

@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { StreamEvent } from "./model";
 import { atom, useRecoilCallback, useRecoilState } from "recoil";
-import axios from "axios";
+import backend from "./backend";
 import _ from "lodash";
 
 const delay = async (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -14,7 +14,7 @@ const streamEventsState = atom<StreamEvent[]>({
 function useStreamEvents() {
   const [streamEvents, setStreamEvents] = useRecoilState(streamEventsState);
 
-  const getLastId = useRecoilCallback(
+  const getLastIdFromState = useRecoilCallback(
     ({ snapshot }) =>
       async () => {
         const s = await snapshot.getPromise(streamEventsState);
@@ -23,56 +23,66 @@ function useStreamEvents() {
     []
   );
 
-  const fetchStreamEvents = useCallback(
-    async (signal: AbortSignal, lastId: string) => {
-      const resp = await axios.get<StreamEvent[]>("/api/event", {
-        signal: signal,
-        params: { lastId },
-      });
-      if (resp.data.length == 0) return lastId;
-      resp.data.reverse();
-      setStreamEvents((prev) => [...resp.data, ...prev]);
-      return resp.data[0].Id;
+  const addNewEventsToState = useCallback(
+    (data: StreamEvent[]) => {
+      setStreamEvents((prev) =>
+        _.uniqBy([...[...data].reverse(), ...prev], (e) => e.Id)
+      );
     },
     [setStreamEvents]
+  );
+
+  const deleteEventsFromState = useCallback(
+    (...ids: string[]) => {
+      setStreamEvents((prev) => _.filter(prev, (e) => !_.includes(ids, e.Id)));
+    },
+    [setStreamEvents]
+  );
+
+  const fetchStreamEvents = useCallback(
+    async (signal: AbortSignal, lastId: string) => {
+      const data = await backend.readStreamEvents(signal, lastId);
+      if (data.length == 0) return lastId;
+      addNewEventsToState(data);
+      return data[data.length - 1].Id; // return new lastId
+    },
+    [addNewEventsToState]
   );
 
   const pollStreamEvents = useCallback(
     async (signal: AbortSignal) => {
-      let lastId = await getLastId();
+      let lastId = await getLastIdFromState();
       while (!signal.aborted) {
         try {
           lastId = await fetchStreamEvents(signal, lastId);
           await delay(10);
-        } catch (err) {
-          console.info("failed to fatch events: ", err);
-          if (signal.aborted) break;
+        } catch {
+          if (signal.aborted) return;
           await delay(5000);
         }
       }
     },
-    [getLastId, fetchStreamEvents]
+    [getLastIdFromState, fetchStreamEvents]
   );
 
   const deleteStreamEvents = useCallback(
-    (...ids: string[]) => {
-      const params = new URLSearchParams();
-      ids.forEach((id) => params.append("id", id));
-      return axios.delete("/api/event", { params: params }).then(() => {
-        setStreamEvents((prev) =>
-          _.filter(prev, (e) => !_.includes(ids, e.Id))
-        );
-      });
+    async (...ids: string[]) => {
+      await backend.deleteStreamEvents(...ids);
+      deleteEventsFromState(...ids);
     },
-    [setStreamEvents]
+    [deleteEventsFromState]
   );
+
+  const addStreamEvents = backend.addStreamEvents; // need to add encryption later
 
   return {
     streamEvents,
+    addStreamEvents,
     pollStreamEvents,
     deleteStreamEvents,
   };
 }
 
 export default useStreamEvents;
+
 export { streamEventsState };
