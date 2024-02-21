@@ -16,6 +16,7 @@ import { BsClipboardCheck } from "react-icons/bs";
 import { useCallback, useState } from "react";
 import useStreamEvents from "./useStreamEvents";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { formatPastTime } from "./utils";
 
 type Props = {
   paste: StreamEvent;
@@ -55,22 +56,21 @@ function PasteItem({ paste }: Readonly<Props>) {
       }}
     >
       <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }}>
-        {timeText(paste)}
+        {formatPastTime(new Date(paste.Timestamp * 1000))}
       </Text>
 
       <Box
         _hover={{ cursor: "pointer" }}
         onClick={() => setFolded((prev) => !prev)}
+        fontSize="md"
+        fontWeight="300"
+        whiteSpace="pre-wrap"
+        letterSpacing="0.05em"
+        color="gray.600"
+        _dark={{ color: "gray.300" }}
       >
-        <Text pt={2} fontSize="md" fontWeight="thin" whiteSpace="pre-wrap">
-          {payloadText}
-        </Text>
-
-        {foldable && (
-          <Text fontSize="sm" color="gray.500" _dark={{ color: "gray.400" }}>
-            {folded ? "show more" : "show less"}
-          </Text>
-        )}
+        <Text pt={2}>{payloadText}</Text>
+        {foldable && <Text mt={1}>{folded ? "Show more" : "Show less"}</Text>}
       </Box>
 
       <Flex position="absolute" top={1} right={4} gap={2}>
@@ -81,9 +81,7 @@ function PasteItem({ paste }: Readonly<Props>) {
             variant="ghost"
             colorScheme="brand"
             onClick={() => setHidden((prev) => !prev)}
-            icon={
-              <Icon as={hidden ? FaEyeSlash : FaEye} boxSize={6} />
-            }
+            icon={<Icon as={hidden ? FaEyeSlash : FaEye} boxSize={6} />}
           />
         )}
         <IconButton
@@ -99,7 +97,7 @@ function PasteItem({ paste }: Readonly<Props>) {
             />
           }
         />
-        <Menu>
+        <Menu autoSelect={false}>
           <MenuButton
             as={IconButton}
             size="md"
@@ -120,19 +118,6 @@ function PasteItem({ paste }: Readonly<Props>) {
       </Flex>
     </Box>
   );
-}
-
-function timeText(paste: StreamEvent): string {
-  const now = new Date();
-  const date = new Date(paste.Timestamp * 1000);
-  const minutesAgo = Math.floor((now.getTime() - date.getTime()) / 60000);
-  const hoursAgo = Math.floor(minutesAgo / 60);
-  const daysAgo = Math.floor(hoursAgo / 24);
-  if (minutesAgo < 1) return "just now";
-  if (hoursAgo < 1) return `${minutesAgo} min${minutesAgo > 1 ? "s" : ""} ago`;
-  if (daysAgo < 1) return `${hoursAgo} hour${hoursAgo > 1 ? "s" : ""} ago`;
-  if (daysAgo < 10) return `${daysAgo} day${daysAgo > 1 ? "s" : ""} ago`;
-  return date.toDateString();
 }
 
 export default PasteItem;
