@@ -16,7 +16,7 @@ import { BsClipboardCheck } from "react-icons/bs";
 import { useCallback, useState } from "react";
 import useStreamEvents from "./useStreamEvents";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { formatPastTime } from "./utils";
+import { formatPastTime } from "./formatter";
 
 type Props = {
   paste: StreamEvent;

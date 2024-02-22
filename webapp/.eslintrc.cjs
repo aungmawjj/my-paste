@@ -29,4 +29,5 @@ module.exports = {
       { allowConstantExport: true },
     ],
   },
+  printWidth: 120,
 }

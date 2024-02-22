@@ -5,7 +5,7 @@ import TopBar from "./TopBar";
 import { Box, useConst } from "@chakra-ui/react";
 import { Outlet } from "react-router-dom";
 import useStreamEvents from "./useStreamEvents";
-import backend from "./backend";
+import backend, { UnAuthorizedError } from "./backend";
 
 function App() {
   const [user, setUser] = useState<User>();
@@ -13,7 +13,12 @@ function App() {
 
   useEffect(() => {
     const ctrl = new AbortController();
-    backend.authenticate(ctrl.signal).then(setUser).catch(console.warn);
+    backend
+      .authenticate(ctrl.signal)
+      .then(setUser)
+      .catch((err) => {
+        if (err instanceof UnAuthorizedError) window.location.assign("/login");
+      });
     return () => ctrl.abort();
   }, []);
 

@@ -1,4 +1,4 @@
-import { formatPastTime } from "./utils";
+import { formatPastTime } from "./formatter";
 
 describe("formatPastTime", () => {
   let nowMs: number;

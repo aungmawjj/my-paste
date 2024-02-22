@@ -1,16 +1,16 @@
 import axios from "axios";
 import { StreamEvent, User } from "./model";
 
+class UnAuthorizedError extends Error {}
+
 const backend = {
   authenticate: (signal: AbortSignal) => {
     return axios
       .post<User>("/api/auth/authenticate", null, { signal: signal })
       .then((resp) => resp.data)
       .catch((err: Error) => {
-        if (axios.isAxiosError(err) && err.response?.status == 401) {
-          window.location.assign("/login");
-        }
-        // might be offline, for now just leave as loading
+        if (axios.isAxiosError(err) && err.response?.status == 401)
+          throw new UnAuthorizedError();
         throw err;
       });
   },
@@ -33,3 +33,5 @@ const backend = {
 };
 
 export default backend;
+
+export { UnAuthorizedError };
