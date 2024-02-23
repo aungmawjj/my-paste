@@ -11,12 +11,12 @@ import {
   useClipboard,
 } from "@chakra-ui/react";
 import { MdContentCopy, MdDelete, MdMoreVert } from "react-icons/md";
-import { StreamEvent } from "./model";
+import { StreamEvent } from "../model";
 import { BsClipboardCheck } from "react-icons/bs";
 import { useCallback, useState } from "react";
-import useStreamEvents from "./useStreamEvents";
+import useStreamEvents from "../state/useStreamEvents";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { formatPastTime } from "./formatter";
+import { formatPastTime } from "../formatter";
 
 type Props = {
   paste: StreamEvent;

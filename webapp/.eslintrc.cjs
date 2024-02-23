@@ -28,6 +28,5 @@ module.exports = {
       'warn',
       { allowConstantExport: true },
     ],
-  },
-  printWidth: 120,
+  }
 }

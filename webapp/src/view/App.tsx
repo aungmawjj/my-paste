@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import LoadingPage from "./LoadingPage";
-import { User } from "./model";
+import { User } from "../model";
 import TopBar from "./TopBar";
 import { Box, useConst } from "@chakra-ui/react";
 import { Outlet } from "react-router-dom";
-import useStreamEvents from "./useStreamEvents";
-import backend, { UnAuthorizedError } from "./backend";
+import useStreamEvents from "../state/useStreamEvents";
+import backend, { UnAuthorizedError } from "../backend";
 
 function App() {
   const [user, setUser] = useState<User>();

@@ -30,15 +30,15 @@ describe("asymmetric", () => {
   });
 
   test("import public key", async () => {
-    const jwk = await exportCryptoKey(keyPair.publicKey);
-    await expect(importPublicKey(jwk)).resolves;
+    const exported = await exportCryptoKey(keyPair.publicKey);
+    await expect(importPublicKey(exported)).resolves;
   });
 
   test("encrypt decrypt", async () => {
     const data = "hello";
-    const jwk = await exportCryptoKey(keyPair.publicKey);
+    const exported = await exportCryptoKey(keyPair.publicKey);
     // import other device's public key
-    const publicKey = await importPublicKey(jwk);
+    const publicKey = await importPublicKey(exported);
     // encrypt with public key so that only that device's private key can decrypt
     const encrypted = await encryptAsymmetric(publicKey, data);
     // encrypted data can be sent over the network to the other device
@@ -61,8 +61,8 @@ describe("shared key", () => {
   });
 
   test("import shared key", async () => {
-    const jwk = await exportCryptoKey(key);
-    await expect(importSharedKey(jwk)).resolves.not.toThrow();
+    const exported = await exportCryptoKey(key);
+    await expect(importSharedKey(exported)).resolves.not.toThrow();
   });
 
   test("encrypt decrypt", async () => {
@@ -73,8 +73,8 @@ describe("shared key", () => {
   });
 
   test("imported key encrypt decrypt", async () => {
-    const jwk = await exportCryptoKey(key);
-    const importedKey = await importSharedKey(jwk);
+    const exported = await exportCryptoKey(key);
+    const importedKey = await importSharedKey(exported);
 
     const data = "hello";
     const encrypted = await encrypt(importedKey, data);

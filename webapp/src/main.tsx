@@ -1,6 +1,5 @@
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App.tsx";
 import {
   ChakraProvider,
   ColorModeScript,
@@ -8,8 +7,9 @@ import {
   extendTheme,
 } from "@chakra-ui/react";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import PasteList from "./PasteList.tsx";
-import AddPaste from "./AddPaste.tsx";
+import App from "./view/App.tsx";
+import PasteList from "./view/PasteList.tsx";
+import AddPaste from "./view/AddPaste.tsx";
 import { RecoilRoot, RecoilEnv } from "recoil";
 
 if (import.meta.env.MODE == "development") {

@@ -4,7 +4,7 @@ import { RecoilRoot } from "recoil";
 import { act } from "react-dom/test-utils";
 import { setupServer } from "msw/node";
 import { HttpResponse, delay, http } from "msw";
-import { StreamEvent } from "./model";
+import { StreamEvent } from "../model";
 import _ from "lodash";
 
 const now = () => new Date().getTime() / 1000;

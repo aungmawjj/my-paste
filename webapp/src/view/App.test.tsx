@@ -1,8 +1,8 @@
 import App from "./App";
-import { act, render, screen } from "./test-utils";
+import { act, render, screen } from "../test-utils";
 import { setupServer } from "msw/node";
 import { HttpResponse, delay, http } from "msw";
-import { User } from "./model";
+import { User } from "../model";
 
 const fakeUser: User = { Name: "john", Email: "j@g.co" };
 

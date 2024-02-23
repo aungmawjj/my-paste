@@ -21,25 +21,29 @@ function generateSharedKey(): Promise<CryptoKey> {
   );
 }
 
-function exportCryptoKey(key: CryptoKey): Promise<JsonWebKey> {
-  return window.crypto.subtle.exportKey("jwk", key);
+async function exportCryptoKey(key: CryptoKey): Promise<string> {
+  const jwk = await window.crypto.subtle.exportKey("jwk", key);
+  return JSON.stringify(jwk);
 }
 
-function importPublicKey(jwk: JsonWebKey): Promise<CryptoKey> {
+function importPublicKey(input: string): Promise<CryptoKey> {
   return window.crypto.subtle.importKey(
     "jwk",
-    jwk,
+    JSON.parse(input),
     { name: "RSA-OAEP", hash: "SHA-512" },
     true,
     ["encrypt"]
   );
 }
 
-function importSharedKey(jwk: JsonWebKey): Promise<CryptoKey> {
-  return window.crypto.subtle.importKey("jwk", jwk, "AES-GCM", true, [
-    "encrypt",
-    "decrypt",
-  ]);
+function importSharedKey(input: string): Promise<CryptoKey> {
+  return window.crypto.subtle.importKey(
+    "jwk",
+    JSON.parse(input),
+    "AES-GCM",
+    true,
+    ["encrypt", "decrypt"]
+  );
 }
 
 async function encryptAsymmetric(

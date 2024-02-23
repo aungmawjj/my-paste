@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useCallback } from "react";
-import { User } from "./model";
+import { User } from "../model";
 import {
   Avatar,
   Text,

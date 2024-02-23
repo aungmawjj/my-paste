@@ -1,8 +1,8 @@
 import PasteList from "./PasteList";
-import { render, screen } from "./test-utils";
-import { StreamEvent } from "./model";
+import { render, screen } from "../test-utils";
+import { StreamEvent } from "../model";
 import { RecoilRoot } from "recoil";
-import { streamEventsState } from "./useStreamEvents";
+import { streamEventsState } from "../state/useStreamEvents";
 
 test("empty", () => {
   render(<PasteList />);

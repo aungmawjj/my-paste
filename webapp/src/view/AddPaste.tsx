@@ -10,7 +10,7 @@ import {
 import { useCallback, useState } from "react";
 import { IoArrowBack, IoSend } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
-import useStreamEvents from "./useStreamEvents";
+import useStreamEvents from "../state/useStreamEvents";
 
 function AddPaste() {
   const [payload, setPayload] = useState("");
