@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom";
 import "jest-location-mock";
+import "fake-indexeddb/auto";
 import crypto from "crypto";
 
 Object.defineProperty(window, "matchMedia", {
