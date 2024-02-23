@@ -85,13 +85,7 @@ function TopBar({ user, height, px }: Readonly<Props>) {
         />
         <Popover autoFocus={false}>
           <PopoverTrigger>
-            <Avatar
-              bg="teal.300"
-              _dark={{ bg: "teal.200" }}
-              as={Button}
-              size="md"
-              name={user.Name}
-            />
+            <Avatar bg="teal.300" _dark={{ bg: "teal.200" }} as={Button} size="md" name={user.Name} />
           </PopoverTrigger>
           <PopoverContent mx={2}>
             <PopoverArrow />
@@ -101,10 +95,7 @@ function TopBar({ user, height, px }: Readonly<Props>) {
               <Text fontSize="sm" mt={4} mb={6}>
                 {user.Email}
               </Text>
-              <Button
-                leftIcon={<Icon as={MdLogout} boxSize={6} />}
-                onClick={handleLogout}
-              >
+              <Button leftIcon={<Icon as={MdLogout} boxSize={6} />} onClick={handleLogout}>
                 Logout
               </Button>
             </PopoverBody>

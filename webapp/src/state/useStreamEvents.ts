@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { StreamEvent } from "../model";
 import { atom, useRecoilCallback, useRecoilState } from "recoil";
-import backend from "../backend";
+import * as backend from "../backend";
 import _ from "lodash";
 
 const delay = async (ms: number) => new Promise((r) => setTimeout(r, ms));

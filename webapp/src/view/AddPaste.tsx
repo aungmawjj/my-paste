@@ -1,12 +1,4 @@
-import {
-  Box,
-  Button,
-  Checkbox,
-  Flex,
-  Icon,
-  Spacer,
-  Textarea,
-} from "@chakra-ui/react";
+import { Box, Button, Checkbox, Flex, Icon, Spacer, Textarea } from "@chakra-ui/react";
 import { useCallback, useState } from "react";
 import { IoArrowBack, IoSend } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";

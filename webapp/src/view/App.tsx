@@ -5,7 +5,7 @@ import TopBar from "./TopBar";
 import { Box, useConst } from "@chakra-ui/react";
 import { Outlet } from "react-router-dom";
 import useStreamEvents from "../state/useStreamEvents";
-import backend, { UnAuthorizedError } from "../backend";
+import * as backend from "../backend";
 
 function App() {
   const [user, setUser] = useState<User>();
@@ -17,7 +17,8 @@ function App() {
       .authenticate(ctrl.signal)
       .then(setUser)
       .catch((err) => {
-        if (err instanceof UnAuthorizedError) window.location.assign("/login");
+        if (err instanceof backend.UnAuthorizedError)
+          window.location.assign("/login");
       });
     return () => ctrl.abort();
   }, []);

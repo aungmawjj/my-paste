@@ -18,20 +18,16 @@ describe("asymmetric", () => {
   });
 
   test("can export public key", async () => {
-    await expect(
-      window.crypto.subtle.exportKey("jwk", keyPair.publicKey)
-    ).resolves.not.toThrow();
+    await expect(window.crypto.subtle.exportKey("jwk", keyPair.publicKey)).resolves.not.toThrow();
   });
 
   test("cannot export private key", async () => {
-    await expect(
-      window.crypto.subtle.exportKey("jwk", keyPair.privateKey)
-    ).rejects.toThrow(/not extractable/);
+    await expect(window.crypto.subtle.exportKey("jwk", keyPair.privateKey)).rejects.toThrow(/not extractable/);
   });
 
   test("import public key", async () => {
     const exported = await exportCryptoKey(keyPair.publicKey);
-    await expect(importPublicKey(exported)).resolves;
+    await expect(importPublicKey(exported)).resolves.not.toThrow();
   });
 
   test("encrypt decrypt", async () => {
@@ -55,9 +51,7 @@ describe("shared key", () => {
   });
 
   test("can export shared key", async () => {
-    await expect(
-      window.crypto.subtle.exportKey("raw", key)
-    ).resolves.not.toThrow();
+    await expect(window.crypto.subtle.exportKey("raw", key)).resolves.not.toThrow();
   });
 
   test("import shared key", async () => {

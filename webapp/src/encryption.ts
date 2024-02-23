@@ -14,11 +14,7 @@ function generateKeyPair(): Promise<CryptoKeyPair> {
 }
 
 function generateSharedKey(): Promise<CryptoKey> {
-  return window.crypto.subtle.generateKey(
-    { name: "AES-GCM", length: 256 },
-    true,
-    ["encrypt", "decrypt"]
-  );
+  return window.crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
 }
 
 async function exportCryptoKey(key: CryptoKey): Promise<string> {
@@ -29,7 +25,7 @@ async function exportCryptoKey(key: CryptoKey): Promise<string> {
 function importPublicKey(input: string): Promise<CryptoKey> {
   return window.crypto.subtle.importKey(
     "jwk",
-    JSON.parse(input),
+    JSON.parse(input) as JsonWebKey,
     { name: "RSA-OAEP", hash: "SHA-512" },
     true,
     ["encrypt"]
@@ -37,49 +33,28 @@ function importPublicKey(input: string): Promise<CryptoKey> {
 }
 
 function importSharedKey(input: string): Promise<CryptoKey> {
-  return window.crypto.subtle.importKey(
-    "jwk",
-    JSON.parse(input),
-    "AES-GCM",
-    true,
-    ["encrypt", "decrypt"]
-  );
+  return window.crypto.subtle.importKey("jwk", JSON.parse(input) as JsonWebKey, "AES-GCM", true, [
+    "encrypt",
+    "decrypt",
+  ]);
 }
 
-async function encryptAsymmetric(
-  publicKey: CryptoKey,
-  input: string
-): Promise<string> {
+async function encryptAsymmetric(publicKey: CryptoKey, input: string): Promise<string> {
   const encoded = new TextEncoder().encode(input);
-  const encrypted = await window.crypto.subtle.encrypt(
-    { name: "RSA-OAEP" },
-    publicKey,
-    encoded
-  );
+  const encrypted = await window.crypto.subtle.encrypt({ name: "RSA-OAEP" }, publicKey, encoded);
   return bytesToBase64(new Uint8Array(encrypted));
 }
 
-async function decryptAsymmetric(
-  privateKey: CryptoKey,
-  input: string
-): Promise<string> {
+async function decryptAsymmetric(privateKey: CryptoKey, input: string): Promise<string> {
   const encrypted = base64ToBytes(input);
-  const encoded = await window.crypto.subtle.decrypt(
-    { name: "RSA-OAEP" },
-    privateKey,
-    encrypted
-  );
+  const encoded = await window.crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKey, encrypted);
   return new TextDecoder().decode(encoded);
 }
 
 async function encrypt(key: CryptoKey, input: string): Promise<string> {
   const encoded = new TextEncoder().encode(input);
   const iv = window.crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await window.crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    key,
-    encoded
-  );
+  const encrypted = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
   const bytes = new Uint8Array(iv.length + encrypted.byteLength);
   bytes.set(iv, 0);
   bytes.set(new Uint8Array(encrypted), iv.length);
@@ -90,11 +65,7 @@ async function decrypt(key: CryptoKey, input: string): Promise<string> {
   const bytes = base64ToBytes(input);
   const iv = bytes.slice(0, 12);
   const encrypted = bytes.slice(12);
-  const encoded = await window.crypto.subtle.decrypt(
-    { name: "AES-GCM", iv },
-    key,
-    encrypted
-  );
+  const encoded = await window.crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encrypted);
   return new TextDecoder().decode(encoded);
 }
 
@@ -105,7 +76,7 @@ function bytesToBase64(bytes: Uint8Array): string {
 
 function base64ToBytes(base64: string): Uint8Array {
   const binString = atob(base64);
-  const codePoints = _.map(binString, (m) => m.codePointAt(0) || 0);
+  const codePoints = _.map(binString, (m) => m.codePointAt(0) ?? 0);
   return new Uint8Array(codePoints);
 }
 

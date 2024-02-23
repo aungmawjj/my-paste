@@ -90,12 +90,7 @@ function PasteItem({ paste }: Readonly<Props>) {
           variant="ghost"
           colorScheme={hasCopied ? "green" : "brand"}
           onClick={onCopy}
-          icon={
-            <Icon
-              as={hasCopied ? BsClipboardCheck : MdContentCopy}
-              boxSize={6}
-            />
-          }
+          icon={<Icon as={hasCopied ? BsClipboardCheck : MdContentCopy} boxSize={6} />}
         />
         <Menu autoSelect={false}>
           <MenuButton
@@ -107,10 +102,7 @@ function PasteItem({ paste }: Readonly<Props>) {
             icon={<Icon as={MdMoreVert} boxSize={6} />}
           />
           <MenuList>
-            <MenuItem
-              onClick={onDelete}
-              icon={<Icon as={MdDelete} boxSize={6} />}
-            >
+            <MenuItem onClick={onDelete} icon={<Icon as={MdDelete} boxSize={6} />}>
               Delete
             </MenuItem>
           </MenuList>

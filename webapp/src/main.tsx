@@ -1,11 +1,6 @@
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
-import {
-  ChakraProvider,
-  ColorModeScript,
-  ThemeConfig,
-  extendTheme,
-} from "@chakra-ui/react";
+import { ChakraProvider, ColorModeScript, ThemeConfig, extendTheme } from "@chakra-ui/react";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import App from "./view/App.tsx";
 import PasteList from "./view/PasteList.tsx";

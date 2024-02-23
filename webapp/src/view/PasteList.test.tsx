@@ -20,7 +20,5 @@ test("with stream events", () => {
       <PasteList />
     </RecoilRoot>
   );
-  fakeEvents.forEach((e) =>
-    expect(screen.getByText(e.Payload)).toBeInTheDocument()
-  );
+  fakeEvents.forEach((e) => expect(screen.getByText(e.Payload)).toBeInTheDocument());
 });
