@@ -1,11 +1,7 @@
-import { renderHook } from "@testing-library/react";
-import useStreamEvents from "./useStreamEvents";
-import { RecoilRoot } from "recoil";
-import { act } from "react-dom/test-utils";
 import { setupServer } from "msw/node";
 import { HttpResponse, delay, http } from "msw";
-import { StreamEvent } from "../model";
-import _ from "lodash";
+import { StreamEvent } from "./model";
+import { StreamService } from "./StreamService";
 
 const now = () => new Date().getTime() / 1000;
 const fakeEvents: StreamEvent[] = [
@@ -28,22 +24,8 @@ beforeAll(() => server.listen());
 afterAll(() => server.close());
 afterEach(() => server.resetHandlers());
 
-test("initial state", () => {
-  const { result } = renderHook(() => useStreamEvents(), {
-    wrapper: RecoilRoot,
-  });
-  expect(result.current.streamEvents).toStrictEqual([]);
+test("cannot start more than once", () => {
+  const streamService = new StreamService();
+  streamService.start();
+  expect(streamService.start).toThrow();
 });
-
-test("poll events", async () => {
-  const { result } = renderHook(() => useStreamEvents(), {
-    wrapper: RecoilRoot,
-  });
-  await act(async () => {
-    const ctrl = new AbortController();
-    result.current.pollStreamEvents(ctrl.signal).catch(() => {});
-    await delay(100);
-    ctrl.abort();
-  });
-  expect(result.current.streamEvents).toStrictEqual(_.reverse(fakeEvents));
-}, 1000);

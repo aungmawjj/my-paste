@@ -1,11 +1,11 @@
 import { Box, Show, Icon, IconButton } from "@chakra-ui/react";
 import { MdAdd } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import useStreamEvents from "../state/useStreamEvents";
+import { useStreamState } from "../StreamState";
 import PasteItem from "./PasteItem";
 
 function PasteList() {
-  const { streamEvents } = useStreamEvents();
+  const { streamEvents } = useStreamState();
   const navigate = useNavigate();
 
   return (

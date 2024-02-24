@@ -18,7 +18,7 @@ type PStreamEvent = StreamEvent & {
   StreamId: string;
 };
 
-type StreamStatus = {
+type PStreamStatus = {
   StreamId: string;
   KeyPair?: CryptoKeyPair;
   EncryptedSharedKey?: string;
@@ -27,7 +27,7 @@ type StreamStatus = {
 
 interface MyPasteDBSchema extends DBSchema {
   [StoreKeyValue]: { key: string; value: unknown };
-  [StoreStreamStatus]: { key: string; value: StreamStatus };
+  [StoreStreamStatus]: { key: string; value: PStreamStatus };
   [StoreStreamEvents]: {
     key: string;
     value: PStreamEvent;
@@ -47,13 +47,13 @@ function getCurrentUser(): OptionalPromise<User> {
   });
 }
 
-function putStreamStatus(data: StreamStatus): Promise<void> {
+function putStreamStatus(data: PStreamStatus): Promise<void> {
   return withDB(async (db) => {
     await db.put(StoreStreamStatus, data);
   });
 }
 
-function getStreamStatus(streamId: string): OptionalPromise<StreamStatus> {
+function getStreamStatus(streamId: string): OptionalPromise<PStreamStatus> {
   return withDB((db) => db.get(StoreStreamStatus, streamId));
 }
 
@@ -128,7 +128,7 @@ function onUpgradeDB(db: IDBPDatabase<MyPasteDBSchema>) {
 }
 
 export {
-  type StreamStatus,
+  type PStreamStatus,
   putCurrentUser,
   getCurrentUser,
   putStreamStatus,

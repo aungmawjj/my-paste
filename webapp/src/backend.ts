@@ -13,8 +13,8 @@ function authenticate(signal: AbortSignal) {
     });
 }
 
-function addStreamEvents(body: Partial<StreamEvent>) {
-  return axios.post("/api/event", body);
+function addStreamEvent(event: Partial<StreamEvent>) {
+  return axios.post("/api/event", event);
 }
 
 function readStreamEvents(signal: AbortSignal, lastId: string) {
@@ -27,4 +27,4 @@ function deleteStreamEvents(...ids: string[]) {
   return axios.delete("/api/event", { params: params });
 }
 
-export { UnAuthorizedError, authenticate, addStreamEvents, readStreamEvents, deleteStreamEvents };
+export { UnAuthorizedError, authenticate, addStreamEvent, readStreamEvents, deleteStreamEvents };

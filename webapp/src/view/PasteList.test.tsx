@@ -1,8 +1,8 @@
 import PasteList from "./PasteList";
-import { render, screen } from "../test-utils";
+import { render, screen } from "./test-utils";
 import { StreamEvent } from "../model";
 import { RecoilRoot } from "recoil";
-import { streamEventsState } from "../state/useStreamEvents";
+import { StreamState } from "../StreamState";
 
 test("empty", () => {
   render(<PasteList />);
@@ -16,7 +16,7 @@ test("with stream events", () => {
     { Id: "2", Payload: "p2", Timestamp: now(), Kind: "", IsSensitive: false },
   ];
   render(
-    <RecoilRoot initializeState={(s) => s.set(streamEventsState, fakeEvents)}>
+    <RecoilRoot initializeState={(s) => s.set(StreamState, { streamEvents: fakeEvents })}>
       <PasteList />
     </RecoilRoot>
   );

@@ -4,12 +4,14 @@ import { User } from "../model";
 import TopBar from "./TopBar";
 import { Box, useConst } from "@chakra-ui/react";
 import { Outlet } from "react-router-dom";
-import useStreamEvents from "../state/useStreamEvents";
+import { useStreamState } from "../StreamState";
 import * as backend from "../backend";
+import { useStreamService } from "../StreamService";
 
 function App() {
   const [user, setUser] = useState<User>();
-  const { pollStreamEvents } = useStreamEvents();
+  const { onAddedEvents, onDeletedEvents } = useStreamState();
+  const streamService = useStreamService();
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -17,18 +19,16 @@ function App() {
       .authenticate(ctrl.signal)
       .then(setUser)
       .catch((err) => {
-        if (err instanceof backend.UnAuthorizedError)
-          window.location.assign("/login");
+        if (err instanceof backend.UnAuthorizedError) window.location.assign("/login");
       });
     return () => ctrl.abort();
   }, []);
 
   useEffect(() => {
-    if (!user) return;
-    const ctrl = new AbortController();
-    pollStreamEvents(ctrl.signal).catch(console.warn);
-    return () => ctrl.abort();
-  }, [user, pollStreamEvents]);
+    if (!user) return () => {};
+    streamService.start(onAddedEvents, onDeletedEvents);
+    return () => streamService.stop();
+  }, [user, streamService, onAddedEvents, onDeletedEvents]);
 
   const topBarHeight = useConst("72px");
   const px = useConst({ base: 4, md: 20, lg: 40, xl: 60, "2xl": 80 });
