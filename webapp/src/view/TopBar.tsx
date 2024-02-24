@@ -7,7 +7,6 @@ import {
   Flex,
   Spacer,
   Icon,
-  Image,
   Popover,
   PopoverTrigger,
   PopoverContent,
@@ -24,6 +23,8 @@ import {
 } from "@chakra-ui/react";
 import { MdAdd, MdLightMode, MdLogout, MdNightsStay } from "react-icons/md";
 import { useLocation, useNavigate } from "react-router-dom";
+import DarkLogoMyPaste from "../assets/DarkLogoMyPaste.svg?react";
+import LogoMyPaste from "../assets/LogoMyPaste.svg?react";
 
 type Props = {
   user: User;
@@ -62,7 +63,7 @@ function TopBar({ user, height, px }: Readonly<Props>) {
       }}
     >
       <Flex height="100%" alignItems="center" gap={6}>
-        <Image src={darkMode ? "/DarkLogoMyPaste.svg" : "/LogoMyPaste.svg"} />
+        {darkMode ? <DarkLogoMyPaste /> : <LogoMyPaste />}
         <Spacer />
         {location.pathname == "/" && (
           <Show above="md">
