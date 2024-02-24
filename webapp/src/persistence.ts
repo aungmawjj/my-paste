@@ -47,6 +47,12 @@ function getCurrentUser(): OptionalPromise<User> {
   });
 }
 
+function deleteCurrentUser(): Promise<void> {
+  return withDB((db) => {
+    return db.delete(StoreKeyValue, KVStoreKeyCurrentUser);
+  });
+}
+
 function putStreamStatus(data: PStreamStatus): Promise<void> {
   return withDB(async (db) => {
     await db.put(StoreStreamStatus, data);
@@ -111,7 +117,7 @@ function eventPKey(streamId: string, eventId: string): string {
 }
 
 async function withDB<R>(cb: (db: IDBPDatabase<MyPasteDBSchema>) => R | Promise<R>): Promise<R> {
-  const db = await openDB<MyPasteDBSchema>("mypaste", 1, { upgrade: onUpgradeDB });
+  const db = await openDB<MyPasteDBSchema>("MyPaste", 1, { upgrade: onUpgradeDB });
   try {
     return cb(db);
   } finally {
@@ -131,6 +137,7 @@ export {
   type PStreamStatus,
   putCurrentUser,
   getCurrentUser,
+  deleteCurrentUser,
   putStreamStatus,
   getStreamStatus,
   putStreamEvents,

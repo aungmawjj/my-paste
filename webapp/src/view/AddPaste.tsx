@@ -2,12 +2,12 @@ import { Box, Button, Checkbox, Flex, Icon, Spacer, Textarea } from "@chakra-ui/
 import { useCallback, useState } from "react";
 import { IoArrowBack, IoSend } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
-import { useStreamService } from "../StreamService";
+import { useStreamState } from "../state/stream";
 
 function AddPaste() {
   const [payload, setPayload] = useState("");
   const [sensitive, setSensitive] = useState(false);
-  const { addStreamEvent } = useStreamService();
+  const { addStreamEvent } = useStreamState();
   const navigate = useNavigate();
 
   const onSubmit = useCallback(

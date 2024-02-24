@@ -16,7 +16,7 @@ import { BsClipboardCheck } from "react-icons/bs";
 import { useCallback, useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { formatPastTime } from "../formatter";
-import { useStreamService } from "../StreamService";
+import { useStreamState } from "../state/stream";
 
 type Props = {
   paste: StreamEvent;
@@ -26,7 +26,7 @@ const foldAt = 300;
 
 function PasteItem({ paste }: Readonly<Props>) {
   const { onCopy, hasCopied } = useClipboard(paste.Payload);
-  const { deleteStreamEvents } = useStreamService();
+  const { deleteStreamEvents } = useStreamState();
   const [folded, setFolded] = useState(true);
   const [hidden, setHidden] = useState(true);
 

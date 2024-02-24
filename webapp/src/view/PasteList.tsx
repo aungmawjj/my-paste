@@ -1,7 +1,7 @@
 import { Box, Show, Icon, IconButton } from "@chakra-ui/react";
 import { MdAdd } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { useStreamState } from "../StreamState";
+import { useStreamState } from "../state/stream";
 import PasteItem from "./PasteItem";
 
 function PasteList() {

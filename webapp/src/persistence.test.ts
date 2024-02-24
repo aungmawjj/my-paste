@@ -50,9 +50,10 @@ test("put and get stream status", async () => {
 });
 
 test("put and get stream events", async () => {
-  await putStreamEvents(streamId, events);
-  const status = await getStreamStatus(streamId);
+  const lastId = await putStreamEvents(streamId, events);
+  expect(lastId).toStrictEqual(events[events.length - 1].Id);
 
+  const status = await getStreamStatus(streamId);
   expect(status).toBeDefined();
   if (!status) return;
 

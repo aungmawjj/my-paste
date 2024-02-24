@@ -1,8 +1,18 @@
 import PasteList from "./PasteList";
-import { render, screen } from "./test-utils";
+import { render, screen } from "../test-utils";
 import { StreamEvent } from "../model";
-import { RecoilRoot } from "recoil";
-import { StreamState } from "../StreamState";
+import { useStreamState } from "../state/stream";
+
+jest.mock("../state/stream");
+const mockedState: ReturnType<typeof useStreamState> = {
+  streamEvents: [],
+  startStreamService: jest.fn(),
+  stopStreamService: jest.fn(),
+  addStreamEvent: jest.fn(),
+  deleteStreamEvents: jest.fn(),
+};
+const mockedHook = jest.mocked(useStreamState);
+mockedHook.mockReturnValue(mockedState);
 
 test("empty", () => {
   render(<PasteList />);
@@ -15,10 +25,7 @@ test("with stream events", () => {
     { Id: "1", Payload: "p1", Timestamp: now(), Kind: "", IsSensitive: false },
     { Id: "2", Payload: "p2", Timestamp: now(), Kind: "", IsSensitive: false },
   ];
-  render(
-    <RecoilRoot initializeState={(s) => s.set(StreamState, { streamEvents: fakeEvents })}>
-      <PasteList />
-    </RecoilRoot>
-  );
+  mockedHook.mockReturnValue({ ...mockedState, streamEvents: fakeEvents });
+  render(<PasteList />);
   fakeEvents.forEach((e) => expect(screen.getByText(e.Payload)).toBeInTheDocument());
 });
