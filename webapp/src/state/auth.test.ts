@@ -19,6 +19,7 @@ test("authenticate success", async () => {
   await act(async () => {
     await result.current.loadUser(new AbortController().signal);
   });
+  expect(result.current.offline).toEqual(false);
   expect(result.current.user).toEqual(fakeUser);
   expect(await persistence.getCurrentUser()).toEqual(fakeUser);
 }, 1000);
@@ -30,6 +31,7 @@ test("unauthorized", async () => {
   await act(async () => {
     await expect(result.current.loadUser(new AbortController().signal)).rejects.toThrow();
   });
+  expect(result.current.offline).toEqual(false);
   expect(result.current.user).toBeUndefined();
   expect(await persistence.getCurrentUser()).toBeUndefined();
 }, 1000);
@@ -41,5 +43,6 @@ test("offline", async () => {
   await act(async () => {
     await result.current.loadUser(new AbortController().signal);
   });
+  expect(result.current.offline).toEqual(true);
   expect(result.current.user).toEqual(fakeUser);
 }, 1000);
