@@ -1,12 +1,14 @@
-export type User = {
+type User = {
   Name: string;
   Email: string;
 };
 
-export type StreamEvent = {
+type StreamEvent = {
   Id: string;
   Payload: string;
   Timestamp: number;
   Kind?: string;
   IsSensitive?: boolean;
 };
+
+export { type User, type StreamEvent };

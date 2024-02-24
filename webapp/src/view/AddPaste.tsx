@@ -1,35 +1,26 @@
-import {
-  Box,
-  Button,
-  Checkbox,
-  Flex,
-  Icon,
-  Spacer,
-  Textarea,
-} from "@chakra-ui/react";
-import axios from "axios";
+import { Box, Button, Checkbox, Flex, Icon, Spacer, Textarea } from "@chakra-ui/react";
 import { useCallback, useState } from "react";
 import { IoArrowBack, IoSend } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import { useStreamState } from "../state/stream";
 
 function AddPaste() {
   const [payload, setPayload] = useState("");
   const [sensitive, setSensitive] = useState(false);
-
+  const { addStreamEvent } = useStreamState();
   const navigate = useNavigate();
 
   const onSubmit = useCallback(
     (payload: string, sensitive: boolean) => {
       if (payload.length == 0) return;
-      axios
-        .post("/api/event", { Payload: payload, IsSensitive: sensitive })
+      addStreamEvent({ Payload: payload, IsSensitive: sensitive })
         .then(() => {
           payload = "";
           navigate(-1);
         })
         .catch(console.warn);
     },
-    [navigate]
+    [addStreamEvent, navigate]
   );
 
   return (

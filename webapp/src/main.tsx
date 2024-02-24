@@ -1,15 +1,10 @@
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App.tsx";
-import {
-  ChakraProvider,
-  ColorModeScript,
-  ThemeConfig,
-  extendTheme,
-} from "@chakra-ui/react";
+import { ChakraProvider, ColorModeScript, ThemeConfig, extendTheme } from "@chakra-ui/react";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import PasteList from "./PasteList.tsx";
-import AddPaste from "./AddPaste.tsx";
+import App from "./view/App.tsx";
+import PasteList from "./view/PasteList.tsx";
+import AddPaste from "./view/AddPaste.tsx";
 import { RecoilRoot, RecoilEnv } from "recoil";
 
 if (import.meta.env.MODE == "development") {
@@ -57,8 +52,8 @@ const theme = extendTheme({
     brand: {
       50: "#F7FAFC",
       100: "#EDF2F7",
-      200: "#E2E8F0",
-      300: "#CBD5E0",
+      200: "#EDF2F7",
+      300: "#E2E8F0",
       400: "#A0AEC0",
       500: "#1A202C",
       600: "#1A202C",

@@ -1,5 +1,7 @@
 import "@testing-library/jest-dom";
 import "jest-location-mock";
+import "fake-indexeddb/auto";
+import crypto from "crypto";
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -14,3 +16,5 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: jest.fn(),
   })),
 });
+
+Object.defineProperty(window, "crypto", { value: crypto.webcrypto });
