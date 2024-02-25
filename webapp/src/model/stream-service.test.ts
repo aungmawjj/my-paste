@@ -1,16 +1,9 @@
 import { setupServer } from "msw/node";
 import { HttpResponse, delay, http } from "msw";
-import { StreamEvent } from "./types";
 import StreamService from "./stream-service";
-
-const now = () => new Date().getTime() / 1000;
+import { fakeEvents } from "../test-data";
 
 const testStreamId = "test-stream";
-
-const fakeEvents: StreamEvent[] = [
-  { Id: "1", Payload: "p1", Timestamp: now(), Kind: "", IsSensitive: false },
-  { Id: "2", Payload: "p2", Timestamp: now(), Kind: "", IsSensitive: false },
-];
 
 const server = setupServer(
   http.get("/api/event", async ({ request }) => {

@@ -7,20 +7,21 @@ import { useStreamState } from "../state/stream";
 function AddPaste() {
   const [payload, setPayload] = useState("");
   const [sensitive, setSensitive] = useState(false);
-  const { addStreamEvent } = useStreamState();
+  const { streamService } = useStreamState();
   const navigate = useNavigate();
 
   const onSubmit = useCallback(
     (payload: string, sensitive: boolean) => {
       if (payload.length == 0) return;
-      addStreamEvent({ Payload: payload, IsSensitive: sensitive })
+      streamService
+        .addStreamEvent({ Payload: payload, IsSensitive: sensitive })
         .then(() => {
           payload = "";
           navigate(-1);
         })
         .catch(console.warn);
     },
-    [addStreamEvent, navigate]
+    [streamService, navigate]
   );
 
   return (

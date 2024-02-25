@@ -1,11 +1,9 @@
 import { act, renderHook } from "../test-utils";
 import { setupServer } from "msw/node";
 import { HttpResponse, http } from "msw";
-import { User } from "../model/types";
 import { useAuthState } from "./auth";
 import * as persistence from "../model/persistence";
-
-const fakeUser: User = { Name: "john", Email: "j@g.co" };
+import { fakeUser } from "../test-data";
 
 const server = setupServer(http.post("/api/auth/authenticate", () => HttpResponse.json(fakeUser)));
 

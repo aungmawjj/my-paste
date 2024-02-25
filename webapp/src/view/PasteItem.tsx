@@ -26,7 +26,7 @@ const foldAt = 300;
 
 function PasteItem({ paste }: Readonly<Props>) {
   const { onCopy, hasCopied } = useClipboard(paste.Payload);
-  const { deleteStreamEvents } = useStreamState();
+  const { streamService } = useStreamState();
   const [folded, setFolded] = useState(true);
   const [hidden, setHidden] = useState(true);
 
@@ -36,12 +36,13 @@ function PasteItem({ paste }: Readonly<Props>) {
   if (paste.IsSensitive && hidden) payloadText = "* * * * *";
 
   const onDelete = useCallback(() => {
-    deleteStreamEvents(paste.Id)
+    streamService
+      .deleteStreamEvents(paste.Id)
       .then(() => {
         console.debug("deleted paste, id:", paste.Id);
       })
       .catch(console.warn);
-  }, [deleteStreamEvents, paste]);
+  }, [streamService, paste]);
 
   return (
     <Box

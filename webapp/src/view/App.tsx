@@ -8,7 +8,7 @@ import { useAuthState } from "../state/auth";
 
 function App() {
   const { user, loadUser } = useAuthState();
-  const { startStreamService, stopStreamService } = useStreamState();
+  const { streamService, startStreamService } = useStreamState();
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -22,8 +22,8 @@ function App() {
   useEffect(() => {
     if (!user) return;
     startStreamService(user);
-    return stopStreamService;
-  }, [user, startStreamService, stopStreamService]);
+    return streamService.stop;
+  }, [user, streamService, startStreamService]);
 
   const topBarHeight = useConst("72px");
   const px = useConst({ base: 4, md: 20, lg: 40, xl: 60, "2xl": 80 });

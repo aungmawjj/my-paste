@@ -3,7 +3,7 @@ import * as backend from "./backend";
 import * as persistence from "./persistence";
 import { delay } from "./utils";
 
-type Options = {
+type StreamServiceOptions = {
   streamId: string;
   onAddedEvents?: (events: StreamEvent[]) => unknown;
   onDeletedEvents?: (...ids: string[]) => unknown;
@@ -12,11 +12,11 @@ type Options = {
 
 class StreamService {
   private isStarted: boolean = false;
-  private options?: Options;
+  private options?: StreamServiceOptions;
   private abortCtrl?: AbortController;
   private lastId: string = "";
 
-  start = (options: Options) => {
+  start = (options: StreamServiceOptions) => {
     if (this.isStarted) throw new ServiceAlreadyStartedError();
     this.isStarted = true;
     this.options = options;
@@ -90,3 +90,5 @@ class StreamService {
 }
 
 export default StreamService;
+
+export { type StreamServiceOptions };

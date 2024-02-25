@@ -4,7 +4,7 @@ import _ from "lodash";
 import { StreamEvent, User } from "../model/types";
 import StreamService from "../model/stream-service";
 
-const serviceContext = createContext(new StreamService());
+const StreamServiceContext = createContext(new StreamService());
 
 const streamState = atom<{ streamEvents: StreamEvent[] }>({
   key: "streamState",
@@ -13,11 +13,11 @@ const streamState = atom<{ streamEvents: StreamEvent[] }>({
 
 function useStreamState() {
   const [{ streamEvents }, setStreamState] = useRecoilState(streamState);
-  const service = useContext(serviceContext);
+  const streamService = useContext(StreamServiceContext);
 
   const startStreamService = useCallback(
     (user: User) => {
-      service.start({
+      streamService.start({
         streamId: user.Email,
 
         onAddedEvents: (events) => {
@@ -35,16 +35,14 @@ function useStreamState() {
         onError: console.error,
       });
     },
-    [service, setStreamState]
+    [streamService, setStreamState]
   );
 
   return {
+    streamService,
     streamEvents,
     startStreamService,
-    stopStreamService: service.stop,
-    addStreamEvent: service.addStreamEvent,
-    deleteStreamEvents: service.deleteStreamEvents,
   };
 }
 
-export { useStreamState };
+export { useStreamState, StreamServiceContext };
