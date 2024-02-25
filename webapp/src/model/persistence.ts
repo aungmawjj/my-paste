@@ -1,5 +1,5 @@
 import { DBSchema, IDBPDatabase, openDB } from "idb";
-import { StreamEvent, User } from "./model";
+import { StreamEvent, User } from "./types";
 import _ from "lodash";
 
 const StoreKeyValue = "KeyValue";

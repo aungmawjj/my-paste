@@ -1,4 +1,4 @@
-import { StreamEvent, User } from "./model";
+import { StreamEvent, User } from "./types";
 import {
   deleteOlderStreamEvents,
   deleteStreamEvents,

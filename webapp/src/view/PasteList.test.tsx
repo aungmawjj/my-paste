@@ -1,6 +1,6 @@
 import PasteList from "./PasteList";
 import { render, screen } from "../test-utils";
-import { StreamEvent } from "../model";
+import { StreamEvent } from "../model/types";
 import { useStreamState } from "../state/stream";
 
 jest.mock("../state/stream");

@@ -1,8 +1,8 @@
 import { atom, useRecoilState } from "recoil";
 import { useCallback } from "react";
-import { User } from "../model";
-import * as backend from "../backend";
-import * as persistence from "../persistence";
+import { UnAuthorizedError, User } from "../model/types";
+import * as backend from "../model/backend";
+import * as persistence from "../model/persistence";
 
 const authState = atom<{
   offline: boolean;
@@ -26,7 +26,7 @@ function useAuthState() {
       await persistence.putCurrentUser(user);
       return user;
     } catch (err) {
-      if (err instanceof backend.UnAuthorizedError) {
+      if (err instanceof UnAuthorizedError) {
         await persistence.deleteCurrentUser();
         throw err;
       }

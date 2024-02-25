@@ -1,7 +1,5 @@
 import axios from "axios";
-import { StreamEvent, User } from "./model";
-
-class UnAuthorizedError extends Error {}
+import { StreamEvent, UnAuthorizedError, User } from "./types";
 
 function authenticate(signal: AbortSignal) {
   return axios
@@ -27,4 +25,4 @@ function deleteStreamEvents(...ids: string[]) {
   return axios.delete("/api/event", { params: params });
 }
 
-export { UnAuthorizedError, authenticate, addStreamEvent, readStreamEvents, deleteStreamEvents };
+export { authenticate, addStreamEvent, readStreamEvents, deleteStreamEvents };
