@@ -1,5 +1,5 @@
 import { DBSchema, IDBPDatabase, openDB } from "idb";
-import { StreamEvent, User } from "./types";
+import { OptionalPromise, StreamEvent, User } from "./types";
 import _ from "lodash";
 
 const StoreKeyValue = "KeyValue";
@@ -10,8 +10,6 @@ const IndexStreamId = "StreamId";
 const IndexTimestamp = "Timestamp";
 
 const KVStoreKeyCurrentUser = "CurrentUser";
-
-type OptionalPromise<T> = Promise<T | undefined>;
 
 type PStreamEvent = StreamEvent & {
   PKey: string;

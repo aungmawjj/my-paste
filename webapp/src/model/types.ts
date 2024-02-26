@@ -11,10 +11,19 @@ type StreamEvent = {
   IsSensitive?: boolean;
 };
 
+type OptionalPromise<T> = Promise<T | undefined>;
+
 class ServiceNotStartedError extends Error {}
 
 class ServiceAlreadyStartedError extends Error {}
 
 class UnAuthorizedError extends Error {}
 
-export { type User, type StreamEvent, ServiceNotStartedError, ServiceAlreadyStartedError, UnAuthorizedError };
+export {
+  type User,
+  type StreamEvent,
+  type OptionalPromise,
+  ServiceNotStartedError,
+  ServiceAlreadyStartedError,
+  UnAuthorizedError,
+};
