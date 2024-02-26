@@ -1,5 +1,5 @@
 import { Box, Button, Checkbox, Flex, Icon, Spacer, Textarea } from "@chakra-ui/react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { IoArrowBack, IoSend } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { useStreamState } from "../state/stream";
@@ -7,22 +7,19 @@ import { useStreamState } from "../state/stream";
 function AddPaste() {
   const [payload, setPayload] = useState("");
   const [sensitive, setSensitive] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const { streamService } = useStreamState();
   const navigate = useNavigate();
 
-  const onSubmit = useCallback(
-    (payload: string, sensitive: boolean) => {
-      if (payload.length == 0) return;
-      streamService
-        .addStreamEvent({ Payload: payload, IsSensitive: sensitive })
-        .then(() => {
-          payload = "";
-          navigate(-1);
-        })
-        .catch(console.warn);
-    },
-    [streamService, navigate]
-  );
+  const handleSubmit = () => {
+    if (payload.length == 0) return;
+    setSubmitting(true);
+    streamService
+      .addStreamEvent({ Payload: payload, IsSensitive: sensitive })
+      .then(() => navigate(-1))
+      .catch(console.warn)
+      .finally(() => setSubmitting(false));
+  };
 
   return (
     <Box pt={{ md: 10 }} pb={6}>
@@ -48,8 +45,10 @@ function AddPaste() {
         <Button
           size="md"
           colorScheme="brand"
-          onClick={() => onSubmit(payload, sensitive)}
+          onClick={handleSubmit}
           leftIcon={<Icon as={IoSend} boxSize={6} />}
+          isLoading={submitting}
+          loadingText="Submitting"
         >
           Submit
         </Button>
