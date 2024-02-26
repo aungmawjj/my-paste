@@ -39,8 +39,8 @@ function useStreamState() {
   );
 
   return {
-    streamService,
     streamEvents,
+    streamService,
     startStreamService,
   };
 }

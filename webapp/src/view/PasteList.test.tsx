@@ -1,7 +1,14 @@
 import { render, screen } from "../test-utils";
-import { mockUseStreamState, mockStreamState } from "../mock/state/stream";
-import PasteList from "./PasteList"; // import after mock
 import { fakeEvents } from "../test-data";
+
+const mockUseStreamState = jest.fn().mockReturnValue({ streamEvents: [] });
+jest.mock("../state/stream", () => ({ useStreamState: mockUseStreamState }));
+
+import PasteList from "./PasteList"; // import after mock
+
+beforeEach(() => {
+  mockUseStreamState.mockClear();
+});
 
 test("empty", () => {
   render(<PasteList />);
@@ -9,7 +16,7 @@ test("empty", () => {
 });
 
 test("with stream events", () => {
-  mockUseStreamState.mockReturnValue({ ...mockStreamState, streamEvents: [...fakeEvents] });
+  mockUseStreamState.mockReturnValue({ streamEvents: fakeEvents });
   render(<PasteList />);
   fakeEvents.forEach((e) => expect(screen.getByText(e.Payload)).toBeInTheDocument());
 });
