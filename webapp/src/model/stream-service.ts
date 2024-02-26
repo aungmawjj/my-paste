@@ -2,6 +2,9 @@ import { ServiceAlreadyStartedError, ServiceNotStartedError, StreamEvent } from 
 import * as backend from "./backend";
 import * as persistence from "./persistence";
 import { delay } from "./utils";
+import { decrypt, encrypt, importSharedKey } from "./encryption";
+
+const hardCodedKey = `{"key_ops":["encrypt","decrypt"],"ext":true,"kty":"oct","k":"PYhMHfAgHpVrsmNs59ZtRaHbof8Ubw9GsabcbsePBJk","alg":"A256GCM"}`;
 
 type StreamServiceOptions = {
   streamId: string;
@@ -13,8 +16,9 @@ type StreamServiceOptions = {
 class StreamService {
   private isStarted: boolean = false;
   private options?: StreamServiceOptions;
-  private abortCtrl?: AbortController;
+  private abortCtrl!: AbortController;
   private lastId: string = "";
+  private sharedKey!: CryptoKey;
 
   start = (options: StreamServiceOptions) => {
     if (this.isStarted) throw new ServiceAlreadyStartedError();
@@ -25,12 +29,15 @@ class StreamService {
 
   stop = () => {
     this.assertServiceStarted();
-    this.abortCtrl?.abort();
+    this.abortCtrl.abort();
     this.isStarted = false;
   };
 
-  addStreamEvent = async (event: Partial<StreamEvent>) => {
+  addStreamEvent = async (event: Omit<StreamEvent, "Id" | "Timestamp">) => {
     this.assertServiceStarted();
+    if (event.Kind == "PasteText") {
+      event.Payload = await encrypt(this.sharedKey, event.Payload);
+    }
     await backend.addStreamEvent(event); // need to add encryption later
   };
 
@@ -49,16 +56,18 @@ class StreamService {
 
   private startAsync = async () => {
     this.abortCtrl = new AbortController();
-    await Promise.all([this.loadLocalStreamEvents(), this.loadStatus()]);
+    await this.loadStatus();
+    await this.loadLocalStreamEvents();
     await this.pollStreamEvents(this.abortCtrl.signal);
   };
 
   private loadLocalStreamEvents = async () => {
     const events = await persistence.getAllStreamEvents(this.options!.streamId);
-    if (events && events.length > 0) this.options!.onAddedEvents?.(events);
+    if (events && events.length > 0) await this.invokeOnAddedEvents(events);
   };
 
   private loadStatus = async () => {
+    this.sharedKey = await importSharedKey(hardCodedKey);
     const status = await persistence.getStreamStatus(this.options!.streamId);
     if (status) {
       this.lastId = status.LastId ?? "";
@@ -84,8 +93,20 @@ class StreamService {
     const events = await backend.readStreamEvents(signal, this.lastId);
     if (signal.aborted) return;
     if (events.length == 0) return;
-    this.options!.onAddedEvents?.(events);
+    await this.invokeOnAddedEvents(events);
     this.lastId = await persistence.putStreamEvents(this.options!.streamId, events);
+  };
+
+  private invokeOnAddedEvents = async (events: StreamEvent[]) => {
+    const decrypted = await Promise.all(
+      events.map(async (e) => {
+        if (e.Kind == "PasteText") {
+          e.Payload = await decrypt(this.sharedKey, e.Payload);
+        }
+        return e;
+      })
+    );
+    this.options!.onAddedEvents?.(decrypted);
   };
 }
 

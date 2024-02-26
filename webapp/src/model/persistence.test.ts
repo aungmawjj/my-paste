@@ -18,9 +18,9 @@ const user: User = {
 const streamId = user.Email;
 
 const events: StreamEvent[] = [
-  { Id: "e1", Payload: "hello1", Timestamp: 1 },
-  { Id: "e2", Payload: "hello2", Timestamp: 2 },
-  { Id: "e3", Payload: "hello3", Timestamp: 3 },
+  { Id: "e1", Payload: "hello1", Kind: "PasteText", Timestamp: 1 },
+  { Id: "e2", Payload: "hello2", Kind: "PasteText", Timestamp: 2 },
+  { Id: "e3", Payload: "hello3", Kind: "PasteText", Timestamp: 3 },
 ];
 
 test("no current user", async () => {

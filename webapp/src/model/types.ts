@@ -5,9 +5,9 @@ type User = {
 
 type StreamEvent = {
   Id: string;
-  Payload: string;
   Timestamp: number;
-  Kind?: string;
+  Kind: "PasteText" | "DeviceRequest" | "DeviceAdded";
+  Payload: string;
   IsSensitive?: boolean;
 };
 

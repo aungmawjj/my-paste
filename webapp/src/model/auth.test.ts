@@ -11,6 +11,7 @@ afterAll(() => server.close());
 afterEach(() => server.resetHandlers());
 
 test("authenticate success", async () => {
+  await persistence.putCurrentUser(fakeUser);
   const { user, offline } = await getLoginedUser(new AbortController().signal);
   expect(user).toEqual(fakeUser);
   expect(offline).toEqual(false);
