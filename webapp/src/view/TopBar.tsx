@@ -1,4 +1,3 @@
-import axios from "axios";
 import { useCallback } from "react";
 import { User } from "../model/types";
 import {
@@ -25,6 +24,7 @@ import { MdAdd, MdLightMode, MdLogout, MdNightsStay } from "react-icons/md";
 import { useLocation, useNavigate } from "react-router-dom";
 import DarkLogoMyPaste from "../assets/DarkLogoMyPaste.svg?react";
 import LogoMyPaste from "../assets/LogoMyPaste.svg?react";
+import { logout } from "../model/auth";
 
 type Props = {
   user: User;
@@ -34,11 +34,8 @@ type Props = {
 
 function TopBar({ user, height, px }: Readonly<Props>) {
   const handleLogout = useCallback(() => {
-    axios
-      .post("/api/auth/logout", null)
-      .then(() => {
-        window.location.replace("/login");
-      })
+    logout()
+      .then(() => window.location.replace("/login"))
       .catch(console.error);
   }, []);
 

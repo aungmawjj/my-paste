@@ -27,4 +27,8 @@ async function authenticate(signal: AbortSignal, retry: number = 3): OptionalPro
   }
 }
 
-export { getLoginedUser };
+async function logout() {
+  await Promise.all([backend.logout(), persistence.deleteCurrentUser()]);
+}
+
+export { getLoginedUser, logout };

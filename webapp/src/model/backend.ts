@@ -11,6 +11,10 @@ function authenticate(signal: AbortSignal) {
     });
 }
 
+function logout() {
+  return axios.post("/api/auth/logout", null);
+}
+
 function addStreamEvent(event: Partial<StreamEvent>) {
   return axios.post("/api/event", event);
 }
@@ -25,4 +29,4 @@ function deleteStreamEvents(...ids: string[]) {
   return axios.delete("/api/event", { params: params });
 }
 
-export { authenticate, addStreamEvent, readStreamEvents, deleteStreamEvents };
+export { authenticate, logout, addStreamEvent, readStreamEvents, deleteStreamEvents };
