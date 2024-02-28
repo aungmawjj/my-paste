@@ -15,7 +15,7 @@ function AddPaste() {
     if (payload.length == 0) return;
     setSubmitting(true);
     streamService
-      .addStreamEvent({ Kind: "PasteText", Payload: payload, IsSensitive: sensitive })
+      .addPasteText(payload, sensitive)
       .then(() => navigate(-1))
       .catch(console.warn)
       .finally(() => setSubmitting(false));

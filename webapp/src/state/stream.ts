@@ -6,29 +6,37 @@ import StreamService from "../model/stream-service";
 
 const StreamServiceContext = createContext(new StreamService());
 
-const streamState = atom<{ streamEvents: StreamEvent[] }>({
+const streamState = atom<{ pastes: StreamEvent[]; isLoadingCache: boolean }>({
   key: "streamState",
-  default: { streamEvents: [] },
+  default: { pastes: [], isLoadingCache: true },
 });
 
+const useStreamService = () => useContext(StreamServiceContext);
+
 function useStreamState() {
-  const [{ streamEvents }, setStreamState] = useRecoilState(streamState);
-  const streamService = useContext(StreamServiceContext);
+  const [{ pastes, isLoadingCache }, setStreamState] = useRecoilState(streamState);
+  const streamService = useStreamService();
 
   const startStreamService = useCallback(
     (user: User) => {
       streamService.start({
         streamId: user.Email,
 
-        onAddedEvents: (events) => {
+        onLoadedCache: () => {
+          setStreamState((prev) => ({ ...prev, isLoadingCache: false }));
+        },
+
+        onAddedPastes: (events) => {
           setStreamState((prev) => ({
-            streamEvents: _.uniqBy([...[...events].reverse(), ...prev.streamEvents], (e) => e.Id),
+            ...prev,
+            pastes: _.uniqBy([...[...events].reverse(), ...prev.pastes], (e) => e.Id),
           }));
         },
 
-        onDeletedEvents: (...ids) => {
+        onDeletedPastes: (...ids) => {
           setStreamState((prev) => ({
-            streamEvents: _.filter(prev.streamEvents, (e) => !_.includes(ids, e.Id)),
+            ...prev,
+            pastes: _.filter(prev.pastes, (e) => !_.includes(ids, e.Id)),
           }));
         },
 
@@ -39,10 +47,11 @@ function useStreamState() {
   );
 
   return {
-    streamEvents,
+    pastes,
+    isLoadingCache,
     streamService,
     startStreamService,
   };
 }
 
-export { useStreamState, StreamServiceContext };
+export { StreamServiceContext, useStreamState };

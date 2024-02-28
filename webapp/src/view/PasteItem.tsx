@@ -16,17 +16,16 @@ import { BsClipboardCheck } from "react-icons/bs";
 import { useCallback, useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { formatPastTime } from "../model/formatter";
-import { useStreamState } from "../state/stream";
 
 type Props = {
   paste: StreamEvent;
+  onDelete: (id: string) => Promise<unknown>;
 };
 
 const foldAt = 300;
 
-function PasteItem({ paste }: Readonly<Props>) {
+function PasteItem({ paste, onDelete }: Readonly<Props>) {
   const { onCopy, hasCopied } = useClipboard(paste.Payload);
-  const { streamService } = useStreamState();
   const [folded, setFolded] = useState(true);
   const [hidden, setHidden] = useState(true);
 
@@ -35,14 +34,13 @@ function PasteItem({ paste }: Readonly<Props>) {
   if (foldable && folded) payloadText = paste.Payload.slice(0, foldAt) + " ...";
   if (paste.IsSensitive && hidden) payloadText = "* * * * *";
 
-  const onDelete = useCallback(() => {
-    streamService
-      .deleteStreamEvents(paste.Id)
+  const handleDelete = useCallback(() => {
+    onDelete(paste.Id)
       .then(() => {
         console.debug("deleted paste, id:", paste.Id);
       })
       .catch(console.warn);
-  }, [streamService, paste]);
+  }, [paste, onDelete]);
 
   return (
     <Box
@@ -67,7 +65,7 @@ function PasteItem({ paste }: Readonly<Props>) {
         fontWeight="300"
         whiteSpace="pre-wrap"
         letterSpacing="0.05em"
-        color="gray.600"
+        color="gray.700"
         _dark={{ color: "gray.300" }}
       >
         <Text pt={2}>{payloadText}</Text>
@@ -103,7 +101,7 @@ function PasteItem({ paste }: Readonly<Props>) {
             icon={<Icon as={MdMoreVert} boxSize={6} />}
           />
           <MenuList>
-            <MenuItem onClick={onDelete} icon={<Icon as={MdDelete} boxSize={6} />}>
+            <MenuItem onClick={handleDelete} icon={<Icon as={MdDelete} boxSize={6} />}>
               Delete
             </MenuItem>
           </MenuList>

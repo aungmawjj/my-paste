@@ -15,8 +15,8 @@ function logout() {
   return axios.post("/api/auth/logout", null);
 }
 
-function addStreamEvent(event: Partial<StreamEvent>) {
-  return axios.post("/api/event", event);
+function addStreamEvent(event: Omit<StreamEvent, "Id" | "Timestamp">) {
+  return axios.post<StreamEvent>("/api/event", event).then((resp) => resp.data);
 }
 
 function readStreamEvents(signal: AbortSignal, lastId: string) {

@@ -2,16 +2,13 @@ import { OptionalPromise, UnAuthorizedError, User } from "./types";
 import * as backend from "./backend";
 import * as persistence from "./persistence";
 
-// if either no local user, throw UnAuthorizedError
-// if authenticate is successful, offline is false, otherwise true
 async function getLoginedUser(signal: AbortSignal): Promise<{ user: User; offline: boolean }> {
+  // to make later db get calls faster, make get user call even thouugh not required for auth
   const storedUser = await persistence.getCurrentUser();
-  if (!storedUser) throw new UnAuthorizedError();
-
   const onlineUser = await authenticate(signal);
   if (onlineUser) return { user: onlineUser, offline: false };
-
-  return { user: storedUser, offline: true };
+  if (storedUser) return { user: storedUser, offline: true };
+  throw new UnAuthorizedError();
 }
 
 async function authenticate(signal: AbortSignal, retry: number = 3): OptionalPromise<User> {
@@ -24,7 +21,6 @@ async function authenticate(signal: AbortSignal, retry: number = 3): OptionalPro
       await persistence.deleteCurrentUser();
       throw err;
     }
-    if (signal.aborted) return;
     if (retry == 0) return;
     return authenticate(signal, retry - 1);
   }

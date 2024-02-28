@@ -1,5 +1,5 @@
 import { DBSchema, IDBPDatabase, openDB } from "idb";
-import { OptionalPromise, StreamEvent, User } from "./types";
+import { OptionalPromise, StreamEvent, StreamStatus, User } from "./types";
 import _ from "lodash";
 
 const StoreKeyValue = "KeyValue";
@@ -16,16 +16,9 @@ type PStreamEvent = StreamEvent & {
   StreamId: string;
 };
 
-type PStreamStatus = {
-  StreamId: string;
-  KeyPair?: CryptoKeyPair;
-  EncryptedSharedKey?: string;
-  LastId?: string;
-};
-
 interface MyPasteDBSchema extends DBSchema {
   [StoreKeyValue]: { key: string; value: unknown };
-  [StoreStreamStatus]: { key: string; value: PStreamStatus };
+  [StoreStreamStatus]: { key: string; value: StreamStatus };
   [StoreStreamEvents]: {
     key: string;
     value: PStreamEvent;
@@ -51,13 +44,13 @@ function deleteCurrentUser(): Promise<void> {
   });
 }
 
-function putStreamStatus(data: PStreamStatus): Promise<void> {
+function putStreamStatus(data: StreamStatus): Promise<void> {
   return withDB(async (db) => {
     await db.put(StoreStreamStatus, data);
   });
 }
 
-function getStreamStatus(streamId: string): OptionalPromise<PStreamStatus> {
+function getStreamStatus(streamId: string): OptionalPromise<StreamStatus> {
   return withDB((db) => db.get(StoreStreamStatus, streamId));
 }
 
@@ -132,7 +125,7 @@ function onUpgradeDB(db: IDBPDatabase<MyPasteDBSchema>) {
 }
 
 export {
-  type PStreamStatus,
+  type StreamStatus,
   putCurrentUser,
   getCurrentUser,
   deleteCurrentUser,

@@ -9,6 +9,7 @@ import {
   putStreamEvents,
   putStreamStatus,
 } from "./persistence";
+import { generateSharedKey } from "./encryption";
 
 const user: User = {
   Name: "User Name",
@@ -40,7 +41,11 @@ test("not existing stream status", async () => {
 });
 
 test("put and get stream status", async () => {
-  await putStreamStatus({ StreamId: streamId });
+  await putStreamStatus({
+    StreamId: streamId,
+    EncryptionKey: await generateSharedKey(),
+    LastId: "",
+  });
   const status = await getStreamStatus(streamId);
 
   expect(status).toBeDefined();

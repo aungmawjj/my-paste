@@ -11,6 +11,23 @@ type StreamEvent = {
   IsSensitive?: boolean;
 };
 
+type StreamStatus = {
+  StreamId: string;
+  EncryptionKey: CryptoKey;
+  LastId: string;
+};
+
+type DeviceRequestPayload = {
+  DeviceId: string;
+  DevicePublicKey: string;
+  DeviceDescription: string;
+};
+
+type DeviceAddedPayload = DeviceRequestPayload & {
+  EncryptedSharedKey: string;
+  FromDeviceId: string;
+};
+
 type OptionalPromise<T> = Promise<T | undefined>;
 
 class ServiceNotStartedError extends Error {}
@@ -19,11 +36,17 @@ class ServiceAlreadyStartedError extends Error {}
 
 class UnAuthorizedError extends Error {}
 
+class AbortedError extends Error {}
+
 export {
   type User,
   type StreamEvent,
+  type StreamStatus,
+  type DeviceRequestPayload,
+  type DeviceAddedPayload,
   type OptionalPromise,
   ServiceNotStartedError,
   ServiceAlreadyStartedError,
   UnAuthorizedError,
+  AbortedError,
 };

@@ -13,7 +13,7 @@ beforeEach(() => {
 
 test("initial state", () => {
   const { result } = renderHook(() => useStreamState());
-  expect(result.current.streamEvents).toEqual([]);
+  expect(result.current.pastes).toEqual([]);
   expect(result.current.streamService).toBeDefined();
   expect(result.current.startStreamService).toBeDefined();
 });
@@ -33,8 +33,8 @@ test("start stream service with correct options", () => {
 
   expect(options).toBeDefined();
   expect(options?.streamId).toEqual(fakeUser.Email);
-  expect(options?.onAddedEvents).toBeDefined();
-  expect(options?.onDeletedEvents).toBeDefined();
+  expect(options?.onAddedPastes).toBeDefined();
+  expect(options?.onDeletedPastes).toBeDefined();
   expect(options?.onError).toBeDefined();
 });
 
@@ -46,12 +46,12 @@ test("state update", () => {
   result.current.startStreamService(fakeUser);
 
   act(() => {
-    options?.onAddedEvents?.([...fakeEvents])
+    options?.onAddedPastes?.([...fakeEvents]);
   });
-  expect(result.current.streamEvents).toEqual([...fakeEvents].reverse());
+  expect(result.current.pastes).toEqual([...fakeEvents].reverse());
 
   act(() => {
-    options?.onDeletedEvents?.(fakeEvents[0].Id);
+    options?.onDeletedPastes?.(fakeEvents[0].Id);
   });
-  expect(result.current.streamEvents).toEqual(fakeEvents.slice(1));
+  expect(result.current.pastes).toEqual(fakeEvents.slice(1));
 });

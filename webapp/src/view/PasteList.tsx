@@ -5,10 +5,14 @@ import { useStreamState } from "../state/stream";
 import PasteItem from "./PasteItem";
 
 function PasteList() {
-  const { streamEvents } = useStreamState();
+  const { pastes, isLoadingCache, streamService } = useStreamState();
   const navigate = useNavigate();
 
-  return (
+  return isLoadingCache ? (
+    <Box pt={40} textAlign="center">
+      Loading...
+    </Box>
+  ) : (
     <>
       <Show below="md">
         <IconButton
@@ -27,9 +31,9 @@ function PasteList() {
         />
       </Show>
 
-      <Box pb={28} data-testid="paste-list">
-        {streamEvents.map((e) => (
-          <PasteItem paste={e} key={e.Id} />
+      <Box pt={6} pb={28} data-testid="paste-list">
+        {pastes.map((p) => (
+          <PasteItem paste={p} onDelete={streamService.deleteStreamEvents} key={p.Id} />
         ))}
       </Box>
     </>
