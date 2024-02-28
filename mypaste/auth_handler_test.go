@@ -33,8 +33,8 @@ func TestLoginCallbackHandler(t *testing.T) {
 		return req
 	}
 
-	newIdTokenPayload := func(name, email interface{}) *idtoken.Payload {
-		return &idtoken.Payload{Claims: map[string]interface{}{"name": "a", "email": "b"}}
+	newIdTokenPayload := func(name, email string) *idtoken.Payload {
+		return &idtoken.Payload{Claims: map[string]interface{}{"name": name, "email": email}}
 	}
 
 	newRequestForm := func(credential, csrfToken string) url.Values {

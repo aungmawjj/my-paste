@@ -30,6 +30,7 @@ func ReadEventsHandler(streamService StreamService) echo.HandlerFunc {
 		if err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
+		c.Response().Header().Set("Cache-Control", "no-store")
 		return c.JSON(http.StatusOK, events)
 	}
 }
