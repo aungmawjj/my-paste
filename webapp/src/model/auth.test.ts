@@ -1,39 +1,46 @@
-import { setupServer } from "msw/node";
-import { HttpResponse, http } from "msw";
 import { fakeUser } from "../test-data";
-import { getLoginedUser } from "./auth";
-import * as persistence from "../model/persistence";
+import { act, renderHook } from "../test-utils";
 
-const server = setupServer(http.post("/api/auth/authenticate", () => HttpResponse.json(fakeUser)));
+const mockGetLoginedUser = jest.fn().mockReturnValue({ user: fakeUser, offline: true });
+jest.mock("../domain/auth", () => ({ getLoginedUser: mockGetLoginedUser }));
 
-beforeAll(() => server.listen());
-afterAll(() => server.close());
-afterEach(() => server.resetHandlers());
+import { useAuth } from "./auth"; // import after mock
 
-test("authenticate success", async () => {
-  await persistence.putCurrentUser(fakeUser);
-  const { user, offline } = await getLoginedUser(new AbortController().signal);
-  expect(user).toEqual(fakeUser);
-  expect(offline).toEqual(false);
-  expect(await persistence.getCurrentUser()).toEqual(fakeUser);
-}, 1000);
+beforeEach(() => {
+  mockGetLoginedUser.mockClear();
+});
 
-test("unauthorized", async () => {
-  await persistence.putCurrentUser(fakeUser);
-  server.use(http.post("/api/auth/authenticate", () => HttpResponse.json({}, { status: 401 })));
+describe("loadUser", () => {
+  test("offline", async () => {
+    const { result } = renderHook(() => useAuth());
+    await act(async () => {
+      await result.current.loadUser(new AbortController().signal);
+    });
+    expect(result.current.user).toEqual(fakeUser);
+    expect(result.current.offline).toEqual(true);
+  }, 1000);
 
-  await expect(getLoginedUser(new AbortController().signal)).rejects.toThrow();
+  test("online", async () => {
+    mockGetLoginedUser.mockReturnValue({ user: fakeUser, offline: false });
+    const { result } = renderHook(() => useAuth());
+    await act(async () => {
+      await result.current.loadUser(new AbortController().signal);
+    });
+    expect(result.current.user).toEqual(fakeUser);
+    expect(result.current.offline).toEqual(false);
+  }, 1000);
 
-  expect(await persistence.getCurrentUser()).toBeUndefined();
-}, 1000);
+  test("failed", async () => {
+    mockGetLoginedUser.mockImplementation(() => {
+      throw new Error();
+    });
 
-test("offline", async () => {
-  await persistence.putCurrentUser(fakeUser);
-  server.use(http.post("/api/auth/authenticate", () => HttpResponse.error()));
+    const { result } = renderHook(() => useAuth());
+    await act(async () => {
+      await expect(result.current.loadUser(new AbortController().signal)).rejects.toThrow();
+    });
 
-  const { user, offline } = await getLoginedUser(new AbortController().signal);
-
-  expect(user).toEqual(fakeUser);
-  expect(offline).toEqual(true);
-  expect(await persistence.getCurrentUser()).toEqual(fakeUser);
-}, 1000);
+    expect(result.current.user).toEqual(undefined);
+    expect(result.current.offline).toEqual(false);
+  }, 1000);
+});

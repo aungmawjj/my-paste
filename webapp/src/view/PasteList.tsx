@@ -1,18 +1,14 @@
 import { Box, Show, Icon, IconButton } from "@chakra-ui/react";
 import { MdAdd } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { useStreamState } from "../state/stream";
+import { useStream } from "../model/stream";
 import PasteItem from "./PasteItem";
 
 function PasteList() {
-  const { pastes, isLoadingCache, streamService } = useStreamState();
+  const { pastes, deletePastes } = useStream();
   const navigate = useNavigate();
 
-  return isLoadingCache ? (
-    <Box pt={40} textAlign="center">
-      Loading...
-    </Box>
-  ) : (
+  return (
     <>
       <Show below="md">
         <IconButton
@@ -33,7 +29,7 @@ function PasteList() {
 
       <Box pt={6} pb={28} data-testid="paste-list">
         {pastes.map((p) => (
-          <PasteItem paste={p} onDelete={streamService.deleteStreamEvents} key={p.Id} />
+          <PasteItem paste={p} onDelete={deletePastes} key={p.Id} />
         ))}
       </Box>
     </>

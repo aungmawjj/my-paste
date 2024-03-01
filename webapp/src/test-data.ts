@@ -1,4 +1,4 @@
-import { StreamEvent, User } from "./model/types";
+import { StreamEvent, User } from "./domain/types";
 
 const now = () => new Date().getTime() / 1000;
 

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { User } from "../model/types";
+import { User } from "../domain/types";
 import {
   Avatar,
   Text,
@@ -24,8 +24,8 @@ import { MdAdd, MdLightMode, MdLogout, MdNightsStay } from "react-icons/md";
 import { useLocation, useNavigate } from "react-router-dom";
 import DarkLogoMyPaste from "../assets/DarkLogoMyPaste.svg?react";
 import LogoMyPaste from "../assets/LogoMyPaste.svg?react";
-import { logout } from "../model/auth";
-import { useStreamState } from "../state/stream";
+import { logout } from "../domain/auth";
+import { useStream } from "../model/stream";
 
 type Props = {
   user: User;
@@ -34,8 +34,7 @@ type Props = {
 };
 
 function TopBar({ user, height, px }: Readonly<Props>) {
-  const { isLoadingCache } = useStreamState();
-
+  const { addPasteText } = useStream();
   const handleLogout = useCallback(() => {
     logout()
       .then(() => window.location.replace("/login"))
@@ -65,7 +64,7 @@ function TopBar({ user, height, px }: Readonly<Props>) {
       <Flex height="100%" alignItems="center" gap={6}>
         {darkMode ? <DarkLogoMyPaste /> : <LogoMyPaste />}
         <Spacer />
-        {!isLoadingCache && location.pathname == "/" && (
+        {addPasteText && location.pathname == "/" && (
           <Show above="md">
             <Button
               colorScheme="brand"

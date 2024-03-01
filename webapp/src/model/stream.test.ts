@@ -1,9 +1,8 @@
+import { renderHook } from "../test-utils";
+import { fakeEvents } from "../test-data";
+import { useStream } from "./stream";
 import { setupServer } from "msw/node";
 import { HttpResponse, delay, http } from "msw";
-import StreamService from "./stream-service";
-import { fakeEvents } from "../test-data";
-
-const testStreamId = "test-stream";
 
 const server = setupServer(
   http.get("/api/event", async ({ request }) => {
@@ -20,12 +19,7 @@ beforeAll(() => server.listen());
 afterAll(() => server.close());
 afterEach(() => server.resetHandlers());
 
-test("cannot start service more than once", () => {
-  server.use(http.get("/api/event", () => HttpResponse.error()));
-  const streamService = new StreamService();
-  expect(() => streamService.start({ streamId: testStreamId })).not.toThrow();
-  expect(() => streamService.start({ streamId: testStreamId })).toThrow();
-  streamService.stop();
-  expect(() => streamService.start({ streamId: testStreamId })).not.toThrow();
-  streamService.stop();
+test("initial state", () => {
+  const { result } = renderHook(() => useStream());
+  expect(result.current.pastes).toEqual([]);
 });

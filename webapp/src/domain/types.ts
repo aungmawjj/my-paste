@@ -30,10 +30,6 @@ type DeviceAddedPayload = DeviceRequestPayload & {
 
 type OptionalPromise<T> = Promise<T | undefined>;
 
-class ServiceNotStartedError extends Error {}
-
-class ServiceAlreadyStartedError extends Error {}
-
 class UnAuthorizedError extends Error {}
 
 class AbortedError extends Error {}
@@ -45,8 +41,6 @@ export {
   type DeviceRequestPayload,
   type DeviceAddedPayload,
   type OptionalPromise,
-  ServiceNotStartedError,
-  ServiceAlreadyStartedError,
   UnAuthorizedError,
   AbortedError,
 };

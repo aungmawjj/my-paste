@@ -8,8 +8,12 @@ function requireNotAborted(signal: AbortSignal) {
   if (signal.aborted) throw Error("aborted");
 }
 
-function notNil<T>(e: T | undefined | null): e is T {
+function filterNotNil<T>(arr: (T | null | undefined)[]): T[] {
+  return arr.filter(isNotNil);
+}
+
+function isNotNil<T>(e: T | undefined | null): e is T {
   return !_.isNil(e);
 }
 
-export { delay, requireNotAborted, notNil as isNotNil };
+export { delay, requireNotAborted, filterNotNil, isNotNil };

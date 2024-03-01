@@ -77,7 +77,7 @@ function putStreamEvents(streamId: string, data: StreamEvent[]): Promise<string>
   });
 }
 
-function getAllStreamEvents(streamId: string): OptionalPromise<StreamEvent[]> {
+function getAllStreamEvents(streamId: string): Promise<StreamEvent[]> {
   return withDB(async (db) => {
     const events = await db.getAllFromIndex(StoreStreamEvents, IndexStreamId, streamId);
     return events.map<StreamEvent>((e) => _.omit(e, "PKey", "StreamId"));

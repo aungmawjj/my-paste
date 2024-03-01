@@ -11,15 +11,15 @@ import {
   useClipboard,
 } from "@chakra-ui/react";
 import { MdContentCopy, MdDelete, MdMoreVert } from "react-icons/md";
-import { StreamEvent } from "../model/types";
+import { StreamEvent } from "../domain/types";
 import { BsClipboardCheck } from "react-icons/bs";
 import { useCallback, useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { formatPastTime } from "../model/formatter";
+import { formatPastTime } from "../domain/formatter";
 
 type Props = {
   paste: StreamEvent;
-  onDelete: (id: string) => Promise<unknown>;
+  onDelete?: (id: string) => Promise<unknown>;
 };
 
 const foldAt = 300;
@@ -35,7 +35,7 @@ function PasteItem({ paste, onDelete }: Readonly<Props>) {
   if (paste.IsSensitive && hidden) payloadText = "* * * * *";
 
   const handleDelete = useCallback(() => {
-    onDelete(paste.Id)
+    onDelete?.(paste.Id)
       .then(() => {
         console.debug("deleted paste, id:", paste.Id);
       })

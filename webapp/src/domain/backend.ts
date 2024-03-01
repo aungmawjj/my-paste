@@ -1,5 +1,6 @@
 import axios from "axios";
 import { StreamEvent, UnAuthorizedError, User } from "./types";
+import { delay, requireNotAborted } from "./utils";
 
 function authenticate(signal: AbortSignal) {
   return axios
@@ -29,4 +30,17 @@ function deleteStreamEvents(...ids: string[]) {
   return axios.delete("/api/event", { params: params });
 }
 
-export { authenticate, logout, addStreamEvent, readStreamEvents, deleteStreamEvents };
+async function longPoll(signal: AbortSignal, fetcher: () => Promise<void>) {
+  while (!signal.aborted) {
+    try {
+      await fetcher();
+      await delay(10);
+    } catch (err) {
+      requireNotAborted(signal);
+      console.debug("failed to fetch, error:", err);
+      await delay(5000);
+    }
+  }
+}
+
+export { authenticate, logout, addStreamEvent, readStreamEvents, deleteStreamEvents, longPoll };

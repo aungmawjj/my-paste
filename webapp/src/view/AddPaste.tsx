@@ -2,20 +2,19 @@ import { Box, Button, Checkbox, Flex, Icon, Spacer, Textarea } from "@chakra-ui/
 import { useState } from "react";
 import { IoArrowBack, IoSend } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
-import { useStreamState } from "../state/stream";
+import { useStream } from "../model/stream";
 
 function AddPaste() {
   const [payload, setPayload] = useState("");
   const [sensitive, setSensitive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const { streamService } = useStreamState();
+  const { addPasteText } = useStream();
   const navigate = useNavigate();
 
   const handleSubmit = () => {
     if (payload.length == 0) return;
     setSubmitting(true);
-    streamService
-      .addPasteText(payload, sensitive)
+    addPasteText?.(payload, sensitive)
       .then(() => navigate(-1))
       .catch(console.warn)
       .finally(() => setSubmitting(false));
