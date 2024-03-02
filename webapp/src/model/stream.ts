@@ -1,20 +1,20 @@
 import { atom, useRecoilState } from "recoil";
 import { useCallback, useMemo } from "react";
 import _ from "lodash";
-import { StreamEvent, StreamStatus } from "../domain/types";
+import { StreamEvent } from "../domain/types";
 import * as backend from "../domain/backend";
 import * as persistence from "../domain/persistence";
 import { decrypt, encrypt } from "../domain/encryption";
 import { filterNotNil, requireNotAborted } from "../domain/utils";
 import { getOrCreateEncryptionKey } from "../domain/device";
 
-const streamState = atom<{ pastes: StreamEvent[]; status?: StreamStatus }>({
+const streamState = atom<{ pastes: StreamEvent[]; streamId?: string; encryptionKey?: CryptoKey }>({
   key: "streamState",
   default: { pastes: [] },
 });
 
 function useStream() {
-  const [{ pastes, status }, setStreamState] = useRecoilState(streamState);
+  const [{ pastes, streamId, encryptionKey }, setStreamState] = useRecoilState(streamState);
 
   const addPastesToState = useCallback(
     (events: StreamEvent[]) => {
@@ -36,32 +36,27 @@ function useStream() {
     [setStreamState]
   );
 
-  const setStatusToState = useCallback(
-    (status: StreamStatus) => setStreamState((prev) => ({ ...prev, status })),
-    [setStreamState]
-  );
-
   const addPasteText = useMemo(() => {
-    return !status
+    return !encryptionKey
       ? undefined
       : async (payload: string, isSensitive: boolean) => {
           return backend.addStreamEvent({
             Kind: "PasteText",
-            Payload: await encrypt(status.EncryptionKey, payload),
+            Payload: await encrypt(encryptionKey, payload),
             IsSensitive: isSensitive,
           });
         };
-  }, [status]);
+  }, [encryptionKey]);
 
   const deletePastes = useMemo(() => {
-    return !status
+    return !streamId
       ? undefined
       : async (...ids: string[]) => {
           await backend.deleteStreamEvents(...ids);
-          await persistence.deleteStreamEvents(status.StreamId, ...ids);
+          await persistence.deleteStreamEvents(streamId, ...ids);
           deletePastesFromState(...ids);
         };
-  }, [status, deletePastesFromState]);
+  }, [streamId, deletePastesFromState]);
 
   const loadStatus = useCallback(
     async (signal: AbortSignal, streamId: string) => {
@@ -70,10 +65,10 @@ function useStream() {
         status = { StreamId: streamId, EncryptionKey: await getOrCreateEncryptionKey(signal), LastId: "" };
         await persistence.putStreamStatus(status);
       }
-      setStatusToState(status);
+      setStreamState((prev) => ({ ...prev, streamId: streamId, encryptionKey: status!.EncryptionKey }));
       return status;
     },
-    [setStatusToState]
+    [setStreamState]
   );
 
   const listenToStreamEvents = useCallback(
@@ -83,12 +78,13 @@ function useStream() {
 
       requireNotAborted(signal);
       const status = await loadStatus(signal, streamId);
+      let lastId = status.LastId;
 
       await backend.longPoll(signal, async () => {
-        const events = await backend.readStreamEvents(signal, status.LastId);
+        const events = await backend.readStreamEvents(signal, lastId);
         const pastes = await getDecryptedPastes(status.EncryptionKey, events);
         addPastesToState(pastes);
-        await persistence.putStreamEvents(streamId, pastes);
+        lastId = await persistence.putStreamEvents(streamId, pastes);
       });
     },
     [loadStatus, addPastesToState]
