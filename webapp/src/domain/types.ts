@@ -6,7 +6,7 @@ type User = {
 type StreamEvent = {
   Id: string;
   Timestamp: number;
-  Kind: "PasteText" | "DeviceRequest" | "DeviceAdded";
+  Kind: "PasteText" | "DeviceRequest" | "DeviceAdded" | "FirstDevice";
   Payload: string;
   IsSensitive?: boolean;
 };
@@ -17,14 +17,17 @@ type StreamStatus = {
   LastId: string;
 };
 
-type DeviceRequestPayload = {
-  DeviceId: string;
-  DevicePublicKey: string;
-  DeviceDescription: string;
+type Device = {
+  Id: string;
+  Description: string;
+};
+
+type DeviceRequestPayload = Device & {
+  PublicKey: string;
 };
 
 type DeviceAddedPayload = DeviceRequestPayload & {
-  EncryptedSharedKey: string;
+  EncryptionKey: string;
   FromDeviceId: string;
 };
 
@@ -38,6 +41,7 @@ export {
   type User,
   type StreamEvent,
   type StreamStatus,
+  type Device,
   type DeviceRequestPayload,
   type DeviceAddedPayload,
   type OptionalPromise,

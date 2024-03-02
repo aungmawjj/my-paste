@@ -1,8 +1,11 @@
 package mypaste
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 )
@@ -14,7 +17,14 @@ func AddEventHandler(streamService StreamService) echo.HandlerFunc {
 		if err := c.Bind(&event); err != nil {
 			return c.String(http.StatusBadRequest, err.Error())
 		}
-		event, err := streamService.Add(c.Request().Context(), user.Email, event)
+		ctx := c.Request().Context()
+		stream := user.Email
+		if strings.Contains(event.Kind, "Device") {
+			if err := handleDeviceEvent(ctx, streamService, stream, event); err != nil {
+				return c.String(http.StatusInternalServerError, err.Error())
+			}
+		}
+		event, err := streamService.Add(ctx, stream, event)
 		if err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
@@ -53,13 +63,39 @@ func DeleteEventsHandler(streamService StreamService) echo.HandlerFunc {
 	}
 }
 
-func ResetEventsHandler(streamService StreamService) echo.HandlerFunc {
+func ResetStreamHandler(streamService StreamService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		user := GetAuthorizedUser(c)
-		count, err := streamService.Reset(c.Request().Context(), user.Email)
+		err := streamService.Reset(c.Request().Context(), user.Email)
 		if err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
-		return c.JSON(http.StatusOK, fmt.Sprintf("deleted %v event streams", count))
+		return c.JSON(http.StatusOK, fmt.Sprintf("reset stream, email: %v", user.Email))
 	}
+}
+
+func GetDevicesHandler(streamService StreamService) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		user := GetAuthorizedUser(c)
+		devices, err := streamService.GetDevices(c.Request().Context(), user.Email)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, err.Error())
+		}
+		return c.JSON(http.StatusOK, devices)
+	}
+}
+
+func handleDeviceEvent(ctx context.Context, streamService StreamService, stream string, event Event) error {
+	var device Device
+	err := json.Unmarshal([]byte(event.Payload), &device)
+	if err != nil {
+		return err
+	}
+	switch event.Kind {
+	case "DeviceAdded":
+		_, err = streamService.AddDevice(ctx, stream, device)
+	case "FirstDevice":
+		_, err = streamService.AddFirstDevice(ctx, stream, device)
+	}
+	return err
 }

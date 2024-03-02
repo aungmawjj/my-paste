@@ -11,21 +11,21 @@ import (
 )
 
 func main() {
-	flushall := len(os.Args) > 1 && os.Args[1] == "flushall"
-	if flushall {
-		redisFlushAll()
+	flushdb := len(os.Args) > 1 && os.Args[1] == "flushdb"
+	if flushdb {
+		redisFlushDB()
 		return
 	}
 	mypaste.Start()
 }
 
-func redisFlushAll() {
-	fmt.Println("Running redis flushall")
+func redisFlushDB() {
+	fmt.Println("Running redis flushdb")
 	redisOpts, _ := redis.ParseURL(mypaste.GetEnvVerbose("REDIS_URL", true))
 	redisClient := redis.NewClient(redisOpts)
-	result, err := redisClient.FlushAll(context.Background()).Result()
+	result, err := redisClient.FlushDB(context.Background()).Result()
 	if err != nil {
-		fmt.Println("flushall error:", err)
+		fmt.Println("flushdb error:", err)
 	}
 	fmt.Println(result)
 }

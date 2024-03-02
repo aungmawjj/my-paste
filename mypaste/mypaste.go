@@ -72,7 +72,12 @@ func Start() {
 		g.POST("", AddEventHandler(streamService))
 		g.GET("", ReadEventsHandler(streamService))
 		g.DELETE("", DeleteEventsHandler(streamService))
-		g.DELETE("/reset", ResetEventsHandler(streamService))
+		g.DELETE("/reset", ResetStreamHandler(streamService))
+	}
+
+	{
+		g := api.Group("/device")
+		g.GET("", GetDevicesHandler(streamService))
 	}
 
 	api.Any("/*", ApiNotFoundHandler)
