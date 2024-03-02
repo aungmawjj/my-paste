@@ -90,16 +90,16 @@ func Start() {
 
 func loadConfig() config {
 	return config{
-		GoogleClientId:   getEnvVerbose("GOOGLE_CLIENT_ID", false),
-		JwtSignKey:       getEnvVerbose("JWT_SIGN_KEY", true),
-		WebappBundleDir:  getEnvVerbose("WEBAPP_BUNDLE_DIR", false),
-		LoginCallbackUri: getEnvVerbose("LOGIN_CALLBACK_URI", false),
-		ServeAddr:        getEnvVerbose("SERVE_ADDR", false),
-		EnableAutoTLS:    getEnvVerbose("ENABLE_AUTO_TLS", false),
-		TlsCacheDir:      getEnvVerbose("TLS_CACHE_DIR", false),
-		TlsDomain:        getEnvVerbose("TLS_DOMAIN", false),
-		RedisUrl:         getEnvVerbose("REDIS_URL", false),
-		ReqBodyLimit:     getEnvVerbose("REQ_BODY_LIMIT", false),
+		GoogleClientId:   GetEnvVerbose("GOOGLE_CLIENT_ID", false),
+		JwtSignKey:       GetEnvVerbose("JWT_SIGN_KEY", true),
+		WebappBundleDir:  GetEnvVerbose("WEBAPP_BUNDLE_DIR", false),
+		LoginCallbackUri: GetEnvVerbose("LOGIN_CALLBACK_URI", false),
+		ServeAddr:        GetEnvVerbose("SERVE_ADDR", false),
+		EnableAutoTLS:    GetEnvVerbose("ENABLE_AUTO_TLS", false),
+		TlsCacheDir:      GetEnvVerbose("TLS_CACHE_DIR", false),
+		TlsDomain:        GetEnvVerbose("TLS_DOMAIN", false),
+		RedisUrl:         GetEnvVerbose("REDIS_URL", true),
+		ReqBodyLimit:     GetEnvVerbose("REQ_BODY_LIMIT", false),
 	}
 }
 
@@ -133,7 +133,7 @@ func RootHandler(c echo.Context) error {
 	return c.String(http.StatusOK, "Hello, Welcome!")
 }
 
-func getEnvVerbose(name string, sensitive bool) string {
+func GetEnvVerbose(name string, sensitive bool) string {
 	value := os.Getenv(name)
 	printValue := value
 	if sensitive {

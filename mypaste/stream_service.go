@@ -2,7 +2,7 @@ package mypaste
 
 import (
 	"context"
-	"strconv"
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -14,6 +14,7 @@ type StreamService interface {
 	Read(ctx context.Context, stream, lastId string) ([]Event, error)
 	Delete(ctx context.Context, stream string, ids ...string) (int64, error)
 	Reset(ctx context.Context, stream string) (int64, error)
+	// GetDevices(ctx context.Context, stream string) ([]Device, error)
 }
 
 type RedisStreamConfig struct {
@@ -22,21 +23,21 @@ type RedisStreamConfig struct {
 	ReadBlock time.Duration
 }
 
-type redisStream struct {
+type redisStreamService struct {
 	client *redis.Client
 	config RedisStreamConfig
 }
 
-var _ StreamService = (*redisStream)(nil)
+var _ StreamService = (*redisStreamService)(nil)
 
 func NewRedisStreamService(client *redis.Client, config RedisStreamConfig) StreamService {
-	return &redisStream{
+	return &redisStreamService{
 		client: client,
 		config: config,
 	}
 }
 
-func (s *redisStream) Add(ctx context.Context, stream string, event Event) (Event, error) {
+func (s *redisStreamService) Add(ctx context.Context, stream string, event Event) (Event, error) {
 	event.Timestamp = time.Now().Unix()
 	id, err := s.client.XAdd(ctx, &redis.XAddArgs{
 		Stream: s.streamId(stream),
@@ -51,7 +52,7 @@ func (s *redisStream) Add(ctx context.Context, stream string, event Event) (Even
 	return event, nil
 }
 
-func (s *redisStream) Read(ctx context.Context, stream, lastId string) ([]Event, error) {
+func (s *redisStreamService) Read(ctx context.Context, stream, lastId string) ([]Event, error) {
 	if lastId == "" {
 		lastId = "0"
 	}
@@ -69,7 +70,7 @@ func (s *redisStream) Read(ctx context.Context, stream, lastId string) ([]Event,
 	return nil, err
 }
 
-func (s *redisStream) toEvents(messages []redis.XMessage) []Event {
+func (s *redisStreamService) toEvents(messages []redis.XMessage) []Event {
 	events := make([]Event, 0, len(messages))
 	for _, m := range messages {
 		events = append(events, s.toEvent(m))
@@ -77,37 +78,30 @@ func (s *redisStream) toEvents(messages []redis.XMessage) []Event {
 	return events
 }
 
-func (s *redisStream) eventValues(event Event) map[string]interface{} {
+func (s *redisStreamService) eventValues(event Event) map[string]interface{} {
+	jsonValue, _ := json.Marshal(event)
 	return map[string]interface{}{
-		"Payload":     event.Payload,
-		"Kind":        event.Kind,
-		"Timestamp":   strconv.FormatInt(event.Timestamp, 10),
-		"IsSensitive": strconv.FormatBool(event.IsSensitive),
+		"Json": string(jsonValue),
 	}
 }
 
-func (s *redisStream) toEvent(message redis.XMessage) Event {
+func (s *redisStreamService) toEvent(message redis.XMessage) Event {
 	var event Event
+	if jsonValue, ok := message.Values["Json"].(string); ok {
+		json.Unmarshal([]byte(jsonValue), &event)
+	}
 	event.Id = message.ID
-	event.Payload, _ = message.Values["Payload"].(string)
-	event.Kind, _ = message.Values["Kind"].(string)
-	if tmp, ok := message.Values["Timestamp"].(string); ok {
-		event.Timestamp, _ = strconv.ParseInt(tmp, 10, 64)
-	}
-	if tmp, ok := message.Values["IsSensitive"].(string); ok {
-		event.IsSensitive, _ = strconv.ParseBool(tmp)
-	}
 	return event
 }
 
-func (s *redisStream) Delete(ctx context.Context, stream string, ids ...string) (int64, error) {
+func (s *redisStreamService) Delete(ctx context.Context, stream string, ids ...string) (int64, error) {
 	return s.client.XDel(ctx, s.streamId(stream), ids...).Result()
 }
 
-func (s *redisStream) Reset(ctx context.Context, stream string) (int64, error) {
+func (s *redisStreamService) Reset(ctx context.Context, stream string) (int64, error) {
 	return s.client.Del(ctx, s.streamId(stream)).Result()
 }
 
-func (s *redisStream) streamId(stream string) string {
+func (s *redisStreamService) streamId(stream string) string {
 	return "mypaste:event:" + stream
 }
