@@ -1,18 +1,12 @@
-import PasteList from "./PasteList";
 import { render, screen } from "../test-utils";
-import { StreamEvent } from "../model";
-import { useStreamState } from "../state/stream";
+import { fakeEvents } from "../test-data";
 
-jest.mock("../state/stream");
-const mockedState: ReturnType<typeof useStreamState> = {
-  streamEvents: [],
-  startStreamService: jest.fn(),
-  stopStreamService: jest.fn(),
-  addStreamEvent: jest.fn(),
-  deleteStreamEvents: jest.fn(),
-};
-const mockedHook = jest.mocked(useStreamState);
-mockedHook.mockReturnValue(mockedState);
+const mockUseStream = jest.fn().mockReturnValue({ streamEvents: [] });
+jest.mock("../model/stream", () => ({
+  useStream: mockUseStream,
+}));
+
+import PasteList from "./PasteList"; // import after mock
 
 test("empty", () => {
   render(<PasteList />);
@@ -20,12 +14,7 @@ test("empty", () => {
 });
 
 test("with stream events", () => {
-  const now = () => new Date().getTime() / 1000;
-  const fakeEvents: StreamEvent[] = [
-    { Id: "1", Payload: "p1", Timestamp: now(), Kind: "", IsSensitive: false },
-    { Id: "2", Payload: "p2", Timestamp: now(), Kind: "", IsSensitive: false },
-  ];
-  mockedHook.mockReturnValue({ ...mockedState, streamEvents: fakeEvents });
+  mockUseStream.mockReturnValue({ streamService: jest.fn(), streamEvents: fakeEvents });
   render(<PasteList />);
   fakeEvents.forEach((e) => expect(screen.getByText(e.Payload)).toBeInTheDocument());
 });

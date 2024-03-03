@@ -69,6 +69,11 @@ async function decrypt(key: CryptoKey, input: string): Promise<string> {
   return new TextDecoder().decode(encoded);
 }
 
+async function sha256Base64(data: string): Promise<string> {
+  const buffer = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(data));
+  return bytesToBase64(new Uint8Array(buffer));
+}
+
 function bytesToBase64(bytes: Uint8Array): string {
   const binSring = String.fromCodePoint(...bytes);
   return btoa(binSring);
@@ -88,6 +93,7 @@ export {
   importSharedKey,
   encryptAsymmetric,
   decryptAsymmetric,
+  sha256Base64,
   encrypt,
   decrypt,
   bytesToBase64,

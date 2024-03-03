@@ -6,9 +6,14 @@ type User struct {
 }
 
 type Event struct {
-	Id          string
+	Id          string `json:",omitempty"`
 	Payload     string
 	Timestamp   int64
 	Kind        string
 	IsSensitive bool
+}
+
+type Device struct {
+	Id          string
+	Description string
 }

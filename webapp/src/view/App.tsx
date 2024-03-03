@@ -3,12 +3,13 @@ import { Box, useConst } from "@chakra-ui/react";
 import { Outlet } from "react-router-dom";
 import LoadingPage from "./LoadingPage";
 import TopBar from "./TopBar";
-import { useStreamState } from "../state/stream";
-import { useAuthState } from "../state/auth";
+import { useStream } from "../model/stream";
+import { useAuth } from "../model/auth";
+import DeviceRequestDialog from "./DeviceRequestDialog";
 
 function App() {
-  const { user, loadUser } = useAuthState();
-  const { startStreamService, stopStreamService } = useStreamState();
+  const { user, offline, loadUser } = useAuth();
+  const { listenToStreamEvents } = useStream();
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -21,9 +22,10 @@ function App() {
 
   useEffect(() => {
     if (!user) return;
-    startStreamService(user);
-    return stopStreamService;
-  }, [user, startStreamService, stopStreamService]);
+    const ctrl = new AbortController();
+    listenToStreamEvents(ctrl.signal, user.Email, offline).catch(console.debug);
+    return () => ctrl.abort();
+  }, [user, offline, listenToStreamEvents]);
 
   const topBarHeight = useConst("72px");
   const px = useConst({ base: 4, md: 20, lg: 40, xl: 60, "2xl": 80 });
@@ -31,6 +33,7 @@ function App() {
   return user ? (
     <Box overflowX="hidden">
       <TopBar user={user} height={topBarHeight} px={px} />
+      <DeviceRequestDialog />
       <Box pt={topBarHeight} px={px}>
         <Outlet />
       </Box>

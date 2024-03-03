@@ -1,4 +1,4 @@
-import { StreamEvent, User } from "./model";
+import { StreamEvent, User } from "./types";
 import {
   deleteOlderStreamEvents,
   deleteStreamEvents,
@@ -9,6 +9,7 @@ import {
   putStreamEvents,
   putStreamStatus,
 } from "./persistence";
+import { generateSharedKey } from "./encryption";
 
 const user: User = {
   Name: "User Name",
@@ -18,9 +19,9 @@ const user: User = {
 const streamId = user.Email;
 
 const events: StreamEvent[] = [
-  { Id: "e1", Payload: "hello1", Timestamp: 1 },
-  { Id: "e2", Payload: "hello2", Timestamp: 2 },
-  { Id: "e3", Payload: "hello3", Timestamp: 3 },
+  { Id: "e1", Payload: "hello1", Kind: "PasteText", Timestamp: 1 },
+  { Id: "e2", Payload: "hello2", Kind: "PasteText", Timestamp: 2 },
+  { Id: "e3", Payload: "hello3", Kind: "PasteText", Timestamp: 3 },
 ];
 
 test("no current user", async () => {
@@ -40,7 +41,7 @@ test("not existing stream status", async () => {
 });
 
 test("put and get stream status", async () => {
-  await putStreamStatus({ StreamId: streamId });
+  await putStreamStatus({ StreamId: streamId, EncryptionKey: await generateSharedKey(), LastId: "" });
   const status = await getStreamStatus(streamId);
 
   expect(status).toBeDefined();
@@ -50,8 +51,7 @@ test("put and get stream status", async () => {
 });
 
 test("put and get stream events", async () => {
-  const lastId = await putStreamEvents(streamId, events);
-  expect(lastId).toStrictEqual(events[events.length - 1].Id);
+  await putStreamEvents(streamId, events, events[events.length - 1].Id);
 
   const status = await getStreamStatus(streamId);
   expect(status).toBeDefined();

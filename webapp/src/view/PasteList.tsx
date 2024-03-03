@@ -1,14 +1,28 @@
-import { Box, Show, Icon, IconButton } from "@chakra-ui/react";
+import { Box, Show, Icon, IconButton, Text } from "@chakra-ui/react";
 import { MdAdd } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { useStreamState } from "../state/stream";
+import { useStream } from "../model/stream";
 import PasteItem from "./PasteItem";
 
 function PasteList() {
-  const { streamEvents } = useStreamState();
+  const { streamEvents, isFirstDevice, addPasteText, deletePastes } = useStream();
   const navigate = useNavigate();
 
-  return (
+  return !addPasteText ? (
+    <Box pt={32}>
+      {isFirstDevice ? (
+        <Text fontSize="lg" textAlign="center">
+          Setting up...
+        </Text>
+      ) : (
+        <Text fontSize="lg" textAlign="center">
+          New device request is sent!
+          <br />
+          Allow from your existing device.
+        </Text>
+      )}
+    </Box>
+  ) : (
     <>
       <Show below="md">
         <IconButton
@@ -27,10 +41,14 @@ function PasteList() {
         />
       </Show>
 
-      <Box pb={28} data-testid="paste-list">
-        {streamEvents.map((e) => (
-          <PasteItem paste={e} key={e.Id} />
-        ))}
+      <Box pt={6} pb={28} data-testid="paste-list">
+        {streamEvents.map((e) => {
+          console.log(e.Kind, e.Timestamp, e.Payload);
+          switch (e.Kind) {
+            case "PasteText":
+              return <PasteItem paste={e} onDelete={deletePastes} key={e.Id} />;
+          }
+        })}
       </Box>
     </>
   );

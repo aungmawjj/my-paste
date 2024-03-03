@@ -39,4 +39,4 @@ mockery
 - [x] Webapp use event API
 - [x] Webapp improve UI design
 - [x] Webapp store event local
-- [ ] Webapp e2e encrypt and key sharing between clients
+- [x] Webapp e2e encrypt and key sharing between clients

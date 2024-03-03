@@ -1,5 +1,5 @@
 import { DBSchema, IDBPDatabase, openDB } from "idb";
-import { StreamEvent, User } from "./model";
+import { OptionalPromise, StreamEvent, StreamStatus, User } from "./types";
 import _ from "lodash";
 
 const StoreKeyValue = "KeyValue";
@@ -10,24 +10,16 @@ const IndexStreamId = "StreamId";
 const IndexTimestamp = "Timestamp";
 
 const KVStoreKeyCurrentUser = "CurrentUser";
-
-type OptionalPromise<T> = Promise<T | undefined>;
+const KVStoreKeyDeviceId = "DeviceId";
 
 type PStreamEvent = StreamEvent & {
   PKey: string;
   StreamId: string;
 };
 
-type PStreamStatus = {
-  StreamId: string;
-  KeyPair?: CryptoKeyPair;
-  EncryptedSharedKey?: string;
-  LastId?: string;
-};
-
 interface MyPasteDBSchema extends DBSchema {
   [StoreKeyValue]: { key: string; value: unknown };
-  [StoreStreamStatus]: { key: string; value: PStreamStatus };
+  [StoreStreamStatus]: { key: string; value: StreamStatus };
   [StoreStreamEvents]: {
     key: string;
     value: PStreamEvent;
@@ -53,18 +45,39 @@ function deleteCurrentUser(): Promise<void> {
   });
 }
 
-function putStreamStatus(data: PStreamStatus): Promise<void> {
+function putDeviceId(value: string): Promise<void> {
+  return withDB(async (db) => {
+    await db.put(StoreKeyValue, value, KVStoreKeyDeviceId);
+  });
+}
+
+function getDeviceId(): OptionalPromise<string> {
+  return withDB((db) => {
+    return db.get(StoreKeyValue, KVStoreKeyDeviceId) as OptionalPromise<string>;
+  });
+}
+
+function deleteDeviceId(): Promise<void> {
+  return withDB((db) => {
+    return db.delete(StoreKeyValue, KVStoreKeyDeviceId);
+  });
+}
+
+function putStreamStatus(data: StreamStatus): Promise<void> {
   return withDB(async (db) => {
     await db.put(StoreStreamStatus, data);
   });
 }
 
-function getStreamStatus(streamId: string): OptionalPromise<PStreamStatus> {
+function getStreamStatus(streamId: string): OptionalPromise<StreamStatus> {
   return withDB((db) => db.get(StoreStreamStatus, streamId));
 }
 
-function putStreamEvents(streamId: string, data: StreamEvent[]): Promise<string> {
-  const lastId = data[data.length - 1].Id;
+function deleteStreamStatus(streamId: string): Promise<void> {
+  return withDB((db) => db.delete(StoreStreamStatus, streamId));
+}
+
+function putStreamEvents(streamId: string, data: StreamEvent[], lastId: string): Promise<void> {
   return withDB(async (db) => {
     const tx = db.transaction([StoreStreamStatus, StoreStreamEvents], "readwrite");
 
@@ -82,14 +95,24 @@ function putStreamEvents(streamId: string, data: StreamEvent[]): Promise<string>
     );
 
     await tx.done;
-    return lastId;
   });
 }
 
-function getAllStreamEvents(streamId: string): OptionalPromise<StreamEvent[]> {
+function getAllStreamEvents(streamId: string): Promise<StreamEvent[]> {
   return withDB(async (db) => {
     const events = await db.getAllFromIndex(StoreStreamEvents, IndexStreamId, streamId);
     return events.map<StreamEvent>((e) => _.omit(e, "PKey", "StreamId"));
+  });
+}
+
+function deleteAllStreamEvents(streamId: string): Promise<void> {
+  return withDB(async (db) => {
+    const tx = db.transaction(StoreStreamEvents, "readwrite");
+    const iterator = tx.store.index(IndexStreamId).iterate(IDBKeyRange.only(streamId));
+    for await (const cursor of iterator) {
+      await cursor.delete();
+    }
+    await tx.done;
   });
 }
 
@@ -134,14 +157,19 @@ function onUpgradeDB(db: IDBPDatabase<MyPasteDBSchema>) {
 }
 
 export {
-  type PStreamStatus,
+  type StreamStatus,
   putCurrentUser,
   getCurrentUser,
   deleteCurrentUser,
+  putDeviceId,
+  getDeviceId,
+  deleteDeviceId,
   putStreamStatus,
   getStreamStatus,
+  deleteStreamStatus,
   putStreamEvents,
   getAllStreamEvents,
+  deleteAllStreamEvents,
   deleteStreamEvents,
   deleteOlderStreamEvents,
 };
