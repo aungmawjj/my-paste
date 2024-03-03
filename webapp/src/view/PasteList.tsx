@@ -5,7 +5,7 @@ import { useStream } from "../model/stream";
 import PasteItem from "./PasteItem";
 
 function PasteList() {
-  const { pastes, addPasteText, deletePastes } = useStream();
+  const { streamEvents, addPasteText, deletePastes } = useStream();
   const navigate = useNavigate();
 
   return (
@@ -30,9 +30,12 @@ function PasteList() {
       )}
 
       <Box pt={6} pb={28} data-testid="paste-list">
-        {pastes.map((p) => (
-          <PasteItem paste={p} onDelete={deletePastes} key={p.Id} />
-        ))}
+        {streamEvents.map((e) => {
+          switch (e.Kind) {
+            case "PasteText":
+              return <PasteItem paste={e} onDelete={deletePastes} key={e.Id} />;
+          }
+        })}
       </Box>
     </>
   );

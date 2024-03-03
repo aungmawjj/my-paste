@@ -21,5 +21,5 @@ afterEach(() => server.resetHandlers());
 
 test("initial state", () => {
   const { result } = renderHook(() => useStream());
-  expect(result.current.pastes).toEqual([]);
+  expect(result.current.streamEvents).toEqual([]);
 });

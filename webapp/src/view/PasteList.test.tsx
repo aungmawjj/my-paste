@@ -1,7 +1,7 @@
 import { render, screen } from "../test-utils";
 import { fakeEvents } from "../test-data";
 
-const mockUseStream = jest.fn().mockReturnValue({ pastes: [] });
+const mockUseStream = jest.fn().mockReturnValue({ streamEvents: [] });
 jest.mock("../model/stream", () => ({
   useStream: mockUseStream,
 }));
@@ -14,7 +14,7 @@ test("empty", () => {
 });
 
 test("with stream events", () => {
-  mockUseStream.mockReturnValue({ streamService: jest.fn(), pastes: fakeEvents });
+  mockUseStream.mockReturnValue({ streamService: jest.fn(), streamEvents: fakeEvents });
   render(<PasteList />);
   fakeEvents.forEach((e) => expect(screen.getByText(e.Payload)).toBeInTheDocument());
 });
