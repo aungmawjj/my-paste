@@ -5,12 +5,13 @@ import { Device, DeviceAddedPayload, DeviceRequestPayload, StreamEvent } from ".
 import * as backend from "../domain/backend";
 import * as persistence from "../domain/persistence";
 import { decrypt, encrypt } from "../domain/encryption";
-import { requireNotAborted } from "../domain/utils";
+import { filterNotNil, requireNotAborted } from "../domain/utils";
 import { addFirstDevice, approveDevice, getOrCreateDeviceId, requestNewDevice } from "../domain/device";
 
 const streamState = atom<{
   streamEvents: StreamEvent[];
   streamId?: string;
+  isFirstDevice?: boolean;
   encryptionKey?: CryptoKey;
   devices?: Device[];
   deviceRequest?: DeviceRequestPayload;
@@ -20,7 +21,7 @@ const streamState = atom<{
 });
 
 function useStream() {
-  const [{ streamEvents, devices, streamId, encryptionKey, deviceRequest }, setStreamState] =
+  const [{ streamEvents, isFirstDevice, devices, streamId, encryptionKey, deviceRequest }, setStreamState] =
     useRecoilState(streamState);
 
   console.log("state devices ", devices);
@@ -110,19 +111,16 @@ function useStream() {
       async function confirmDeviceRegistered(signal: AbortSignal, streamId: string) {
         const [deviceId, deviceList] = await Promise.all([getOrCreateDeviceId(), backend.getDevices()]);
         devices = deviceList;
+        const isFirstDevice = devices.length == 0;
         requireNotAborted(signal);
-        setStreamState((prev) => ({ ...prev, devices }));
+        setStreamState((prev) => ({ ...prev, devices, isFirstDevice }));
         if (_.find(devices, (d) => d.Id == deviceId)) return; // deviceId is found in backend list
 
         await persistence.deleteAllStreamEvents(streamId);
         try {
-          let encryptionKey: CryptoKey;
-          if (devices.length == 0) {
-            encryptionKey = await addFirstDevice(signal, deviceId);
-          } else {
-            // change status as requesting new device and ask for approval
-            encryptionKey = await requestNewDevice(signal, deviceId);
-          }
+          const encryptionKey = isFirstDevice
+            ? await addFirstDevice(signal, deviceId)
+            : await requestNewDevice(signal, deviceId);
           await persistence.putStreamStatus({ StreamId: streamId, LastId: "", EncryptionKey: encryptionKey });
         } catch (err) {
           console.error("failed to register device", err);
@@ -157,6 +155,7 @@ function useStream() {
 
   return {
     streamEvents,
+    isFirstDevice,
     devices,
     deviceRequest,
     addPasteText,
@@ -167,20 +166,22 @@ function useStream() {
   };
 }
 
-const decryptPasteTexts = (key: CryptoKey) => async (events: StreamEvent[]) => {
-  return Promise.all(
-    events.map(async (e) => {
-      if (e.Kind != "PasteText") return e;
-      let payload: string;
-      try {
-        payload = await decrypt(key, e.Payload);
-      } catch (err) {
-        console.debug("decrypt error: ", err);
-        payload = `Failed to decrypt!`;
-      }
-      return { ...e, Payload: payload };
-    })
-  );
-};
+function decryptPasteTexts(key: CryptoKey) {
+  return async (events: StreamEvent[]): Promise<StreamEvent[]> => {
+    return filterNotNil(
+      await Promise.all(
+        events.map(async (e) => {
+          if (e.Kind != "PasteText") return e;
+          try {
+            return { ...e, Payload: await decrypt(key, e.Payload) };
+          } catch (err) {
+            console.debug("decrypt error: ", err);
+            return null;
+          }
+        })
+      )
+    );
+  };
+}
 
 export { useStream };

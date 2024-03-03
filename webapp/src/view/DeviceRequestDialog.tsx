@@ -18,7 +18,7 @@ function DeviceRequestDialog() {
   return (
     <Modal isOpen={!!deviceRequest} onClose={handleClose} autoFocus={false} closeOnOverlayClick={false}>
       <ModalOverlay />
-      <ModalContent mx={4} _dark={{ bg: "gray.800" }}>
+      <ModalContent mt={40} mx={4} _dark={{ bg: "gray.800" }}>
         <ModalHeader>Device Request</ModalHeader>
         <ModalBody>
           <Text>{deviceRequest?.Description}</Text>
