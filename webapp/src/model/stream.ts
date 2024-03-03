@@ -17,7 +17,7 @@ const streamState = atom<{
   deviceRequest?: DeviceRequestPayload;
 }>({
   key: "streamState",
-  default: { streamEvents: [] },
+  default: { streamEvents: [], isFirstDevice: true },
 });
 
 function useStream() {
