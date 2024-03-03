@@ -10,6 +10,7 @@ const IndexStreamId = "StreamId";
 const IndexTimestamp = "Timestamp";
 
 const KVStoreKeyCurrentUser = "CurrentUser";
+const KVStoreKeyDeviceId = "DeviceId";
 
 type PStreamEvent = StreamEvent & {
   PKey: string;
@@ -44,6 +45,24 @@ function deleteCurrentUser(): Promise<void> {
   });
 }
 
+function putDeviceId(value: string): Promise<void> {
+  return withDB(async (db) => {
+    await db.put(StoreKeyValue, value, KVStoreKeyDeviceId);
+  });
+}
+
+function getDeviceId(): OptionalPromise<string> {
+  return withDB((db) => {
+    return db.get(StoreKeyValue, KVStoreKeyDeviceId) as OptionalPromise<string>;
+  });
+}
+
+function deleteDeviceId(): Promise<void> {
+  return withDB((db) => {
+    return db.delete(StoreKeyValue, KVStoreKeyDeviceId);
+  });
+}
+
 function putStreamStatus(data: StreamStatus): Promise<void> {
   return withDB(async (db) => {
     await db.put(StoreStreamStatus, data);
@@ -54,8 +73,11 @@ function getStreamStatus(streamId: string): OptionalPromise<StreamStatus> {
   return withDB((db) => db.get(StoreStreamStatus, streamId));
 }
 
-function putStreamEvents(streamId: string, data: StreamEvent[]): Promise<string> {
-  const lastId = data[data.length - 1].Id;
+function deleteStreamStatus(streamId: string): Promise<void> {
+  return withDB((db) => db.delete(StoreStreamStatus, streamId));
+}
+
+function putStreamEvents(streamId: string, data: StreamEvent[], lastId: string): Promise<void> {
   return withDB(async (db) => {
     const tx = db.transaction([StoreStreamStatus, StoreStreamEvents], "readwrite");
 
@@ -73,7 +95,6 @@ function putStreamEvents(streamId: string, data: StreamEvent[]): Promise<string>
     );
 
     await tx.done;
-    return lastId;
   });
 }
 
@@ -81,6 +102,17 @@ function getAllStreamEvents(streamId: string): Promise<StreamEvent[]> {
   return withDB(async (db) => {
     const events = await db.getAllFromIndex(StoreStreamEvents, IndexStreamId, streamId);
     return events.map<StreamEvent>((e) => _.omit(e, "PKey", "StreamId"));
+  });
+}
+
+function deleteAllStreamEvents(streamId: string): Promise<void> {
+  return withDB(async (db) => {
+    const tx = db.transaction(StoreStreamEvents, "readwrite");
+    const iterator = tx.store.index(IndexStreamId).iterate(IDBKeyRange.only(streamId));
+    for await (const cursor of iterator) {
+      await cursor.delete();
+    }
+    await tx.done;
   });
 }
 
@@ -129,10 +161,15 @@ export {
   putCurrentUser,
   getCurrentUser,
   deleteCurrentUser,
+  putDeviceId,
+  getDeviceId,
+  deleteDeviceId,
   putStreamStatus,
   getStreamStatus,
+  deleteStreamStatus,
   putStreamEvents,
   getAllStreamEvents,
+  deleteAllStreamEvents,
   deleteStreamEvents,
   deleteOlderStreamEvents,
 };

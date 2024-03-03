@@ -13,7 +13,7 @@ async function getLoginedUser(signal: AbortSignal): Promise<{ user: User; offlin
 
 async function authenticate(signal: AbortSignal, retry: number = 3): OptionalPromise<User> {
   try {
-    const user = await backend.authenticate(signal);
+    const user = await backend.authenticate();
     await persistence.putCurrentUser(user);
     return user;
   } catch (err) {

@@ -5,6 +5,7 @@ import LoadingPage from "./LoadingPage";
 import TopBar from "./TopBar";
 import { useStream } from "../model/stream";
 import { useAuth } from "../model/auth";
+import DeviceRequestDialog from "./DeviceRequestDialog";
 
 function App() {
   const { user, offline, loadUser } = useAuth();
@@ -32,6 +33,7 @@ function App() {
   return user ? (
     <Box overflowX="hidden">
       <TopBar user={user} height={topBarHeight} px={px} />
+      <DeviceRequestDialog />
       <Box pt={topBarHeight} px={px}>
         <Outlet />
       </Box>

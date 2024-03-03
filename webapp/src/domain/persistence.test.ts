@@ -41,11 +41,7 @@ test("not existing stream status", async () => {
 });
 
 test("put and get stream status", async () => {
-  await putStreamStatus({
-    StreamId: streamId,
-    EncryptionKey: await generateSharedKey(),
-    LastId: "",
-  });
+  await putStreamStatus({ StreamId: streamId, EncryptionKey: await generateSharedKey(), LastId: "" });
   const status = await getStreamStatus(streamId);
 
   expect(status).toBeDefined();
@@ -55,8 +51,7 @@ test("put and get stream status", async () => {
 });
 
 test("put and get stream events", async () => {
-  const lastId = await putStreamEvents(streamId, events);
-  expect(lastId).toStrictEqual(events[events.length - 1].Id);
+  await putStreamEvents(streamId, events, events[events.length - 1].Id);
 
   const status = await getStreamStatus(streamId);
   expect(status).toBeDefined();

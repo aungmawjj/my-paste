@@ -27,7 +27,7 @@ type DeviceRequestPayload = Device & {
 };
 
 type DeviceAddedPayload = DeviceRequestPayload & {
-  EncryptionKey: string;
+  EncryptedKey: string;
   FromDeviceId: string;
 };
 
