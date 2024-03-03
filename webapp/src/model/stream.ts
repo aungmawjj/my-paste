@@ -24,8 +24,6 @@ function useStream() {
   const [{ streamEvents, isFirstDevice, devices, streamId, encryptionKey, deviceRequest }, setStreamState] =
     useRecoilState(streamState);
 
-  console.log("state devices ", devices);
-
   const addPasteText = useMemo(() => {
     return !encryptionKey
       ? undefined
@@ -116,6 +114,7 @@ function useStream() {
         setStreamState((prev) => ({ ...prev, devices, isFirstDevice }));
         if (_.find(devices, (d) => d.Id == deviceId)) return; // deviceId is found in backend list
 
+        setStreamState((prev) => ({ ...prev, streamEvents: [] }));
         await persistence.deleteAllStreamEvents(streamId);
         try {
           const encryptionKey = isFirstDevice
