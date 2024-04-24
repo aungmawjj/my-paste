@@ -5,6 +5,11 @@ Quick copy and paste across your devices.
 Sign in using same google account and you paste will be synced in real time.
 Provide End-To-End encryption for data privacy.
 
+## Demo
+[https://mypaste.aungmaw.net](https://mypaste.aungmaw.net)
+
+<img src="docs/tablet.png" alt="Tablet UI" height="400"/>&nbsp;&nbsp;<img src="docs/phone.png" alt="Phone UI" height="400"/>
+
 ## Develop
 ### Install go dependencies
 ```bash
